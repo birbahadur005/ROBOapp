@@ -22,9 +22,19 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     let reconnectTimeout: any;
 
     const connectWebSocket = () => {
+      const isStaticHost =
+        window.location.hostname.endsWith('github.io') ||
+        window.location.hostname.includes('pages.dev');
+
+      const customWs = import.meta.env.VITE_WS_URL;
+      if (!customWs && isStaticHost) {
+        // Standalone static demo mode on GitHub Pages
+        return;
+      }
+
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const host = window.location.port === '5173' ? `${window.location.hostname}:5000` : window.location.host;
-      const wsUrl = `${protocol}//${host}/ws`;
+      const wsUrl = customWs || `${protocol}//${host}/ws`;
 
       try {
         const ws = new WebSocket(wsUrl);

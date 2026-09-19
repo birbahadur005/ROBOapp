@@ -126,7 +126,7 @@ export const App: React.FC = () => {
       <AuthProvider>
         <SocketProvider>
           <SettingsProvider>
-            <Router>
+            <Router basename={import.meta.env.BASE_URL.replace(/\/$/, '') || '/'}>
               <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 transition-colors">
                 <Navbar />
                 <RealTimeNotificationBanner />

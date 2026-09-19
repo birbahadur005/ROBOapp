@@ -1,4 +1,6 @@
-const API_BASE = '/api';
+import { handleMockRoute } from './mockData';
+
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 export interface ApiResponse<T = any> {
   success: boolean;
@@ -11,6 +13,26 @@ export async function request<T = any>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
+  const isStaticHost =
+    typeof window !== 'undefined' &&
+    (window.location.hostname.endsWith('github.io') ||
+      window.location.hostname.includes('pages.dev') ||
+      window.location.hostname.includes('netlify.app'));
+
+  // If deployed to a static host like GitHub Pages without an explicit remote backend URL,
+  // fulfill directly with responsive in-browser mock database
+  if (isStaticHost && !import.meta.env.VITE_API_URL) {
+    let bodyData = null;
+    if (options.body && typeof options.body === 'string') {
+      try {
+        bodyData = JSON.parse(options.body);
+      } catch {
+        bodyData = options.body;
+      }
+    }
+    return handleMockRoute(endpoint, options.method || 'GET', bodyData) as T;
+  }
+
   const token = localStorage.getItem('ravan_auth_token');
   const headers = new Headers(options.headers || {});
 
@@ -22,19 +44,51 @@ export async function request<T = any>(
     headers.set('Content-Type', 'application/json');
   }
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers,
-    credentials: 'include'
-  });
+  try {
+    const response = await fetch(`${API_BASE}${endpoint}`, {
+      ...options,
+      headers,
+      credentials: 'include'
+    });
 
-  const data = await response.json();
+    if (response.status === 404 && !import.meta.env.VITE_API_URL) {
+      let bodyData = null;
+      if (options.body && typeof options.body === 'string') {
+        try {
+          bodyData = JSON.parse(options.body);
+        } catch {
+          bodyData = options.body;
+        }
+      }
+      return handleMockRoute(endpoint, options.method || 'GET', bodyData) as T;
+    }
 
-  if (!response.ok) {
-    throw new Error(data.message || `Request failed with status ${response.status}`);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `Request failed with status ${response.status}`);
+    }
+
+    return data;
+  } catch (err: any) {
+    // If backend is unreachable (e.g. offline local development) fallback to mock
+    if (
+      !import.meta.env.VITE_API_URL ||
+      err.message?.includes('Failed to fetch') ||
+      err.message?.includes('NetworkError')
+    ) {
+      let bodyData = null;
+      if (options.body && typeof options.body === 'string') {
+        try {
+          bodyData = JSON.parse(options.body);
+        } catch {
+          bodyData = options.body;
+        }
+      }
+      return handleMockRoute(endpoint, options.method || 'GET', bodyData) as T;
+    }
+    throw err;
   }
-
-  return data;
 }
 
 export const api = {
