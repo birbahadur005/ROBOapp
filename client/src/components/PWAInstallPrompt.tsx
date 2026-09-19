@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Download, X, Smartphone } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useSettings } from '../context/SettingsContext';
+import { resolveAssetUrl } from '../utils/assets';
 
 export const PWAInstallPrompt: React.FC = () => {
   const { t } = useLanguage();
@@ -43,7 +44,7 @@ export const PWAInstallPrompt: React.FC = () => {
       <div className="flex items-center gap-3">
         {appLogo ? (
           <img
-            src={appLogo}
+            src={resolveAssetUrl(appLogo)}
             alt={appDisplayName}
             className="w-10 h-10 rounded-xl object-cover shadow border border-slate-700 shrink-0"
             onError={(e) => {

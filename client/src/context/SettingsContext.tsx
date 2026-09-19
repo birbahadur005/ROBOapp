@@ -66,15 +66,15 @@ interface SettingsContextType {
 
 const defaultSettings: ApplicationSettings = {
   collegeName: 'RAVAN College Receptionist',
-  tagline: 'AI Visitor & Appointment Management System',
-  logoUrl: '',
+  tagline: 'A Smarter Campus for a Brighter Tomorrow',
+  logoUrl: 'logo.png',
 
   siteName: 'RAVAN College Receptionist',
-  siteLogoUrl: '',
+  siteLogoUrl: 'logo.png',
 
   appName: 'RAVAN College Receptionist',
   appShortName: 'RAVAN Reception',
-  appLogoUrl: '',
+  appLogoUrl: 'logo.png',
 
   themeColor: '#1e3a8a',
   darkModeDefault: false,

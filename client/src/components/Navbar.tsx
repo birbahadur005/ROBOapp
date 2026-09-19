@@ -5,6 +5,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { useSettings } from '../context/SettingsContext';
+import { resolveAssetUrl } from '../utils/assets';
 
 export const Navbar: React.FC = () => {
   const { language, toggleLanguage, t } = useLanguage();
@@ -19,19 +20,20 @@ export const Navbar: React.FC = () => {
     navigate('/');
   };
 
+  const currentLogo = settings.siteLogoUrl || settings.logoUrl || 'logo.png';
+
   return (
     <header className="sticky top-0 z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Logo & College Name */}
           <Link to="/" className="flex items-center gap-3 group">
-            {(settings.siteLogoUrl || settings.logoUrl) ? (
+            {currentLogo ? (
               <img
-                src={settings.siteLogoUrl || settings.logoUrl}
+                src={resolveAssetUrl(currentLogo)}
                 alt={settings.siteName || settings.collegeName}
-                className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl object-cover shadow-md group-hover:scale-105 transition-transform"
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover shadow-md group-hover:scale-105 transition-transform border border-blue-400/40"
                 onError={(e) => {
-                  // Fallback if image fails to load
                   (e.target as HTMLElement).style.display = 'none';
                 }}
               />

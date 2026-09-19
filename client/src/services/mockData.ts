@@ -62,7 +62,7 @@ export interface MockUser {
 }
 
 const STORAGE_KEYS = {
-  INITIALIZED: 'robo_mock_initialized_v4',
+  INITIALIZED: 'robo_mock_initialized_v5',
   SETTINGS: 'robo_mock_settings',
   DEPARTMENTS: 'robo_mock_departments',
   AUTHORITIES: 'robo_mock_authorities',
@@ -363,12 +363,14 @@ const defaultAppointments: MockAppointment[] = [
 
 const defaultSettings = {
   id: 'default',
-  collegeName: 'RAVAN Institute of Technology & Management',
+  collegeName: 'RAVAN College Receptionist',
   siteName: 'RAVAN College Receptionist',
-  tagline: 'AI Visitor & Appointment Management System',
+  tagline: 'A Smarter Campus for a Brighter Tomorrow',
   themeColor: '#1e3a8a',
-  logoUrl: '',
-  appIconUrl: '',
+  logoUrl: 'logo.png',
+  siteLogoUrl: 'logo.png',
+  appLogoUrl: 'logo.png',
+  appIconUrl: 'logo.png',
   appShortName: 'RAVAN Reception',
   defaultLanguage: 'en',
   collegeAddress: 'Knowledge City, Institutional Area, Sector 62',
@@ -534,7 +536,7 @@ export function handleMockRoute(url: string, method: string = 'GET', body: any =
 
   // 5. Upload Logo Mock
   if (pathname === '/admin/upload-logo' && method === 'POST') {
-    return { success: true, logoUrl: '/icon-192.svg', message: 'Logo updated successfully' };
+    return { success: true, logoUrl: 'logo.png', message: 'Logo updated successfully' };
   }
 
   // 6. Departments

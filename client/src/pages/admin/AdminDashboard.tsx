@@ -47,6 +47,7 @@ import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
 import { useLanguage } from '../../i18n/LanguageContext';
+import { resolveAssetUrl } from '../../utils/assets';
 
 const THEME_COLOR_PRESETS = [
   { name: 'Deep Navy', hex: '#1e3a8a' },
@@ -59,12 +60,12 @@ const THEME_COLOR_PRESETS = [
 ];
 
 const APP_ICON_PRESETS = [
-  { id: 'robot', name: 'AI Robot', url: '/icons/app-robot.svg', badge: 'Modern AI' },
-  { id: 'mortarboard', name: 'Academic Cap', url: '/icons/app-mortarboard.svg', badge: 'Education' },
-  { id: 'crest', name: 'College Crest', url: '/icons/app-crest.svg', badge: 'Heritage' },
-  { id: 'shield', name: 'Pass Shield', url: '/icons/app-shield.svg', badge: 'Security' },
-  { id: 'bell', name: 'Concierge Bell', url: '/icons/app-bell.svg', badge: 'Reception' },
-  { id: 'monogram', name: 'RAVAN Monogram', url: '/icons/app-monogram.svg', badge: 'Brand' }
+  { id: 'robot', name: 'AI Robot', url: 'icons/app-robot.png', badge: 'Modern AI' },
+  { id: 'mortarboard', name: 'Academic Cap', url: 'icons/app-mortarboard.svg', badge: 'Education' },
+  { id: 'crest', name: 'College Crest', url: 'icons/app-crest.svg', badge: 'Heritage' },
+  { id: 'shield', name: 'Pass Shield', url: 'icons/app-shield.svg', badge: 'Security' },
+  { id: 'bell', name: 'Concierge Bell', url: 'icons/app-bell.svg', badge: 'Reception' },
+  { id: 'monogram', name: 'RAVAN Monogram', url: 'icons/app-monogram.svg', badge: 'Brand' }
 ];
 
 const AVAILABLE_VISITOR_FIELDS = [
@@ -1753,7 +1754,7 @@ export const AdminDashboard: React.FC = () => {
                         <div className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm flex items-center gap-3 w-full">
                           {settingsForm.siteLogoUrl ? (
                             <img
-                              src={settingsForm.siteLogoUrl}
+                              src={resolveAssetUrl(settingsForm.siteLogoUrl)}
                               alt="Site Logo Preview"
                               className="w-10 h-10 rounded-xl object-contain shadow-sm border border-slate-100 dark:border-slate-800 shrink-0"
                               onError={(e) => {
@@ -1927,7 +1928,7 @@ export const AdminDashboard: React.FC = () => {
                                 </div>
                               )}
                               <img
-                                src={preset.url}
+                                src={resolveAssetUrl(preset.url)}
                                 alt={preset.name}
                                 className="w-11 h-11 rounded-xl object-contain shadow-sm group-hover:scale-105 transition-transform"
                               />
@@ -1999,7 +2000,7 @@ export const AdminDashboard: React.FC = () => {
                               <div className="w-16 h-16 rounded-[24%] bg-gradient-to-br from-blue-600 via-indigo-600 to-slate-900 shadow-2xl p-1 flex items-center justify-center ring-2 ring-white/20 transition-transform hover:scale-105">
                                 {settingsForm.appLogoUrl || settingsForm.siteLogoUrl ? (
                                   <img
-                                    src={settingsForm.appLogoUrl || settingsForm.siteLogoUrl}
+                                    src={resolveAssetUrl(settingsForm.appLogoUrl || settingsForm.siteLogoUrl)}
                                     alt="App Icon"
                                     className="w-full h-full object-cover rounded-[20%]"
                                     onError={(e) => {
@@ -2028,7 +2029,7 @@ export const AdminDashboard: React.FC = () => {
                               <div className="w-16 h-16 rounded-[22.5%] bg-gradient-to-br from-slate-800 to-black shadow-2xl p-1 flex items-center justify-center ring-1 ring-white/30 transition-transform hover:scale-105 overflow-hidden">
                                 {settingsForm.appLogoUrl || settingsForm.siteLogoUrl ? (
                                   <img
-                                    src={settingsForm.appLogoUrl || settingsForm.siteLogoUrl}
+                                    src={resolveAssetUrl(settingsForm.appLogoUrl || settingsForm.siteLogoUrl)}
                                     alt="App Icon"
                                     className="w-full h-full object-cover rounded-[20%]"
                                     onError={(e) => {
@@ -2058,7 +2059,7 @@ export const AdminDashboard: React.FC = () => {
                                 <div className="w-10 h-10 rounded-xl bg-slate-900 p-0.5 flex items-center justify-center shrink-0 border border-slate-700">
                                   {settingsForm.appLogoUrl || settingsForm.siteLogoUrl ? (
                                     <img
-                                      src={settingsForm.appLogoUrl || settingsForm.siteLogoUrl}
+                                      src={resolveAssetUrl(settingsForm.appLogoUrl || settingsForm.siteLogoUrl)}
                                       alt="App Icon"
                                       className="w-full h-full object-contain rounded-lg"
                                       onError={(e) => {

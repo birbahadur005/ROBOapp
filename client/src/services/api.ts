@@ -13,15 +13,8 @@ export async function request<T = any>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const isStaticHost =
-    typeof window !== 'undefined' &&
-    (window.location.hostname.endsWith('github.io') ||
-      window.location.hostname.includes('pages.dev') ||
-      window.location.hostname.includes('netlify.app'));
-
-  // If deployed to a static host like GitHub Pages without an explicit remote backend URL,
-  // fulfill directly with responsive in-browser mock database
-  if (isStaticHost && !import.meta.env.VITE_API_URL) {
+  // Keep all data in client-side file/localStorage store when no server is connected
+  if (!import.meta.env.VITE_API_URL) {
     let bodyData = null;
     if (options.body && typeof options.body === 'string') {
       try {
@@ -29,6 +22,8 @@ export async function request<T = any>(
       } catch {
         bodyData = options.body;
       }
+    } else if (options.body) {
+      bodyData = options.body;
     }
     return handleMockRoute(endpoint, options.method || 'GET', bodyData) as T;
   }

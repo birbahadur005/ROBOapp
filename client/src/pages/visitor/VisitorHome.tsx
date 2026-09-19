@@ -18,6 +18,7 @@ import {
 import { useSettings } from '../../context/SettingsContext';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { api } from '../../services/api';
+import { resolveAssetUrl } from '../../utils/assets';
 
 export const VisitorHome: React.FC = () => {
   const { settings } = useSettings();
@@ -140,6 +141,21 @@ export const VisitorHome: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
       {/* Welcome Hero Banner */}
       <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white rounded-3xl p-8 sm:p-12 shadow-2xl border border-blue-900/40 text-center space-y-4">
+        {/* Logo Avatar Badge */}
+        <div className="flex justify-center mb-1">
+          <div className="relative group">
+            <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 opacity-60 blur group-hover:opacity-100 transition duration-500"></div>
+            <img
+              src={resolveAssetUrl(settings.siteLogoUrl || settings.logoUrl || 'logo.png')}
+              alt={settings.collegeName}
+              className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-2 border-blue-400/40 p-1 bg-slate-950/80 shadow-2xl"
+            />
+            <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-slate-950 p-1.5 rounded-full ring-2 ring-slate-900 shadow-md" title="Kiosk System Ready">
+              <Sparkles className="w-3.5 h-3.5" />
+            </div>
+          </div>
+        </div>
+
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 text-xs font-bold uppercase tracking-wider backdrop-blur-md">
           <Sparkles className="w-3.5 h-3.5" /> Digital Reception Kiosk
         </div>
