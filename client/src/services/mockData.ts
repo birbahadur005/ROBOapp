@@ -789,6 +789,97 @@ export function handleMockRoute(url: string, method: string = 'GET', body: any =
     return { success: true, answer };
   }
 
+  // 15. User Management (Admin only)
+  if (pathname === '/admin/users') {
+    const users = getStorage<MockUser[]>(STORAGE_KEYS.USERS, defaultUsers);
+    if (method === 'POST') {
+      const { accountId, email, password, role } = body || {};
+      if (!accountId || !email || !password) {
+        throw new Error('User ID, Email, and Password are required.');
+      }
+      const cleanAccountId = accountId.trim().toUpperCase();
+      const cleanEmail = email.trim().toLowerCase();
+
+      if (users.some((u) => u.accountId.toUpperCase() === cleanAccountId)) {
+        throw new Error(`User ID "${cleanAccountId}" is already in use.`);
+      }
+      if (users.some((u) => u.email.toLowerCase() === cleanEmail)) {
+        throw new Error(`Email "${cleanEmail}" is already in use.`);
+      }
+
+      const newUser: MockUser = {
+        id: 'usr-' + Date.now(),
+        accountId: cleanAccountId,
+        email: cleanEmail,
+        password: password.trim(),
+        role: role || 'AUTHORITY',
+        status: 'ACTIVE'
+      };
+      users.push(newUser);
+      setStorage(STORAGE_KEYS.USERS, users);
+      return { success: true, user: newUser, message: 'User created successfully.' };
+    }
+
+    return {
+      success: true,
+      users: users.map((u) => ({
+        id: u.id,
+        accountId: u.accountId,
+        email: u.email,
+        role: u.role,
+        status: u.status,
+        authorityProfile: u.authorityProfile
+          ? {
+              id: u.authorityProfile.id,
+              name: u.authorityProfile.name,
+              designation: u.authorityProfile.designation
+            }
+          : undefined
+      }))
+    };
+  }
+
+  const userUpdateMatch = pathname.match(/^\/admin\/users\/(.+)$/);
+  if (userUpdateMatch) {
+    const id = userUpdateMatch[1];
+    const users = getStorage<MockUser[]>(STORAGE_KEYS.USERS, defaultUsers);
+    const index = users.findIndex((u) => u.id === id);
+    if (index === -1) throw new Error('User not found.');
+
+    if (method === 'PATCH') {
+      const { accountId, password, email, role, status } = body || {};
+      if (accountId && accountId.trim()) {
+        const cleanId = accountId.trim().toUpperCase();
+        if (users.some((u) => u.id !== id && u.accountId.toUpperCase() === cleanId)) {
+          throw new Error(`User ID "${cleanId}" is already taken by another account.`);
+        }
+        users[index].accountId = cleanId;
+      }
+      if (password && password.trim()) {
+        if (password.length < 6) throw new Error('Password must be at least 6 characters.');
+        users[index].password = password.trim();
+      }
+      if (email && email.trim()) {
+        users[index].email = email.trim().toLowerCase();
+      }
+      if (role) {
+        users[index].role = role;
+      }
+      if (status) {
+        users[index].status = status;
+      }
+
+      setStorage(STORAGE_KEYS.USERS, users);
+      return { success: true, user: users[index], message: 'User credentials updated successfully.' };
+    }
+
+    if (method === 'DELETE') {
+      const filtered = users.filter((u) => u.id !== id);
+      setStorage(STORAGE_KEYS.USERS, filtered);
+      return { success: true, message: 'User deleted successfully.' };
+    }
+  }
+
   // Default fallback
   return { success: true, data: [] };
 }

@@ -503,6 +503,236 @@ export class AdminController {
   }
 
   /**
+   * List all user accounts (Admin only)
+   */
+  public static async listUsers(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const users = await prisma.user.findMany({
+        orderBy: { createdAt: 'asc' },
+        select: {
+          id: true,
+          accountId: true,
+          email: true,
+          role: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+          authorityProfile: {
+            select: {
+              id: true,
+              name: true,
+              designation: true,
+              officeLocation: true
+            }
+          }
+        }
+      });
+
+      res.json({ success: true, users });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Create a new user account (Admin only)
+   */
+  public static async createUser(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { accountId, email, password, role } = req.body;
+      const adminUser = req.user!;
+
+      if (!accountId || !email || !password) {
+        return res.status(400).json({ success: false, message: 'User ID, Email, and Password are required.' });
+      }
+
+      const cleanAccountId = accountId.trim().toUpperCase();
+      const cleanEmail = email.trim().toLowerCase();
+
+      // Check uniqueness
+      const existing = await prisma.user.findFirst({
+        where: {
+          OR: [{ accountId: cleanAccountId }, { email: cleanEmail }]
+        }
+      });
+
+      if (existing) {
+        if (existing.accountId.toUpperCase() === cleanAccountId) {
+          return res.status(400).json({ success: false, message: `User ID "${cleanAccountId}" is already taken.` });
+        }
+        return res.status(400).json({ success: false, message: `Email "${cleanEmail}" is already registered.` });
+      }
+
+      const passwordHash = await bcrypt.hash(password, 10);
+      const newUser = await prisma.user.create({
+        data: {
+          accountId: cleanAccountId,
+          email: cleanEmail,
+          passwordHash,
+          role: role || 'AUTHORITY',
+          status: 'ACTIVE'
+        },
+        select: {
+          id: true,
+          accountId: true,
+          email: true,
+          role: true,
+          status: true,
+          createdAt: true
+        }
+      });
+
+      await AuditService.log({
+        userId: adminUser.id,
+        action: 'ADMIN_CREATE_USER',
+        entityType: 'USER',
+        entityId: newUser.id,
+        details: { accountId: cleanAccountId, role: newUser.role },
+        req
+      });
+
+      res.status(201).json({ success: true, user: newUser, message: 'User account created successfully.' });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Update any user's credentials, User ID, Password, Role, or Status (Admin only)
+   */
+  public static async updateUser(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.params.userId as string;
+      const { accountId, password, email, role, status } = req.body;
+      const adminUser = req.user!;
+
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found.' });
+      }
+
+      const updateData: any = {};
+
+      if (accountId && accountId.trim()) {
+        const cleanAccountId = accountId.trim().toUpperCase();
+        if (cleanAccountId !== user.accountId) {
+          const duplicate = await prisma.user.findUnique({ where: { accountId: cleanAccountId } });
+          if (duplicate && duplicate.id !== userId) {
+            return res.status(400).json({ success: false, message: `User ID "${cleanAccountId}" is already taken by another account.` });
+          }
+          updateData.accountId = cleanAccountId;
+        }
+      }
+
+      if (email && email.trim()) {
+        const cleanEmail = email.trim().toLowerCase();
+        if (cleanEmail !== user.email) {
+          const duplicateEmail = await prisma.user.findUnique({ where: { email: cleanEmail } });
+          if (duplicateEmail && duplicateEmail.id !== userId) {
+            return res.status(400).json({ success: false, message: `Email "${cleanEmail}" is already registered by another account.` });
+          }
+          updateData.email = cleanEmail;
+        }
+      }
+
+      if (password && password.trim()) {
+        if (password.length < 6) {
+          return res.status(400).json({ success: false, message: 'Password must be at least 6 characters long.' });
+        }
+        updateData.passwordHash = await bcrypt.hash(password.trim(), 10);
+      }
+
+      if (role) {
+        const validRoles = ['SUPER_ADMIN', 'COLLEGE_ADMIN', 'AUTHORITY', 'RECEPTION'];
+        if (!validRoles.includes(role)) {
+          return res.status(400).json({ success: false, message: 'Invalid role specified.' });
+        }
+        updateData.role = role;
+      }
+
+      if (status) {
+        updateData.status = status;
+      }
+
+      const updated = await prisma.user.update({
+        where: { id: userId },
+        data: updateData,
+        select: {
+          id: true,
+          accountId: true,
+          email: true,
+          role: true,
+          status: true,
+          updatedAt: true,
+          authorityProfile: {
+            select: {
+              id: true,
+              name: true,
+              designation: true
+            }
+          }
+        }
+      });
+
+      await AuditService.log({
+        userId: adminUser.id,
+        action: 'ADMIN_UPDATE_USER_CREDENTIALS',
+        entityType: 'USER',
+        entityId: userId,
+        details: {
+          updatedAccountId: updateData.accountId ? true : false,
+          updatedPassword: updateData.passwordHash ? true : false,
+          updatedRole: updateData.role,
+          updatedStatus: updateData.status
+        },
+        req
+      });
+
+      res.json({
+        success: true,
+        user: updated,
+        message: 'User credentials and information updated successfully.'
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Delete a user account (Admin only)
+   */
+  public static async deleteUser(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.params.userId as string;
+      const adminUser = req.user!;
+
+      if (adminUser.id === userId) {
+        return res.status(400).json({ success: false, message: 'You cannot delete your own active admin account.' });
+      }
+
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found.' });
+      }
+
+      await prisma.user.delete({ where: { id: userId } });
+
+      await AuditService.log({
+        userId: adminUser.id,
+        action: 'ADMIN_DELETE_USER',
+        entityType: 'USER',
+        entityId: userId,
+        details: { accountId: user.accountId, email: user.email },
+        req
+      });
+
+      res.json({ success: true, message: 'User account deleted successfully.' });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
    * Analytics
    */
   public static async getAnalytics(req: AuthRequest, res: Response, next: NextFunction) {

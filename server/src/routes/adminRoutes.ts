@@ -34,7 +34,11 @@ router.delete('/departments/:id', AdminController.deleteDepartment);
 router.post('/authorities', AdminController.createAuthority);
 router.patch('/authorities/:id', AdminController.updateAuthority);
 
-// User status toggle
+// User accounts & credentials management (Admin only)
+router.get('/users', AdminController.listUsers);
+router.post('/users', AdminController.createUser);
+router.patch('/users/:userId', AdminController.updateUser);
 router.patch('/users/:userId/status', AdminController.toggleUserStatus);
+router.delete('/users/:userId', AdminController.deleteUser);
 
 export default router;

@@ -38,7 +38,10 @@ import {
   ExternalLink,
   X,
   Sparkles,
-  Laptop
+  Laptop,
+  Key,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -83,7 +86,7 @@ export const AdminDashboard: React.FC = () => {
   const { t } = useLanguage();
 
   const [activeTab, setActiveTab] = useState<
-    'ANALYTICS' | 'AUTHORITIES' | 'DEPARTMENTS' | 'COLLEGE_INFO' | 'CAMPUS_MAP' | 'ANNOUNCEMENTS' | 'SETTINGS' | 'AUDIT_LOGS'
+    'ANALYTICS' | 'USERS' | 'AUTHORITIES' | 'DEPARTMENTS' | 'COLLEGE_INFO' | 'CAMPUS_MAP' | 'ANNOUNCEMENTS' | 'SETTINGS' | 'AUDIT_LOGS'
   >('ANALYTICS');
 
   // Settings sub-tab
@@ -125,6 +128,31 @@ export const AdminDashboard: React.FC = () => {
 
   // Audit Logs State
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
+
+  // User Accounts & Password Management State
+  const [usersList, setUsersList] = useState<any[]>([]);
+  const [userSearch, setUserSearch] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState('ALL');
+  const [editingUser, setEditingUser] = useState<any | null>(null);
+  const [editUserForm, setEditUserForm] = useState({
+    accountId: '',
+    email: '',
+    password: '',
+    role: 'AUTHORITY',
+    status: 'ACTIVE'
+  });
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [showCreateUserModal, setShowCreateUserModal] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [newUserForm, setNewUserForm] = useState({
+    accountId: '',
+    email: '',
+    password: '',
+    role: 'AUTHORITY'
+  });
+  const [userActionLoading, setUserActionLoading] = useState(false);
+  const [userActionError, setUserActionError] = useState<string | null>(null);
+  const [userActionSuccess, setUserActionSuccess] = useState<string | null>(null);
 
   // Logo upload state
   const [uploadingSiteLogo, setUploadingSiteLogo] = useState(false);
@@ -294,14 +322,15 @@ export const AdminDashboard: React.FC = () => {
 
   const loadAllData = async () => {
     try {
-      const [anaRes, deptRes, authRes, infoRes, mapRes, annRes, auditRes] = await Promise.all([
+      const [anaRes, deptRes, authRes, infoRes, mapRes, annRes, auditRes, userRes] = await Promise.all([
         api.get('/admin/analytics').catch(() => ({ success: false })),
         api.get('/admin/departments').catch(() => ({ success: false })),
         api.get('/authorities').catch(() => ({ success: false })),
         api.get('/college/info').catch(() => ({ success: false })),
         api.get('/college/campus').catch(() => ({ success: false })),
         api.get('/college/announcements').catch(() => ({ success: false })),
-        api.get('/admin/audit-logs').catch(() => ({ success: false }))
+        api.get('/admin/audit-logs').catch(() => ({ success: false })),
+        api.get('/admin/users').catch(() => ({ success: false }))
       ]);
 
       if (anaRes.success) setAnalytics(anaRes.analytics);
@@ -311,6 +340,7 @@ export const AdminDashboard: React.FC = () => {
       if (mapRes.success) setCampusLocations(mapRes.locations);
       if (annRes.success) setAnnouncements(annRes.announcements);
       if (auditRes.success) setAuditLogs(auditRes.logs);
+      if (userRes.success) setUsersList(userRes.users);
     } catch (e) {
       console.error(e);
     } finally {
@@ -423,6 +453,122 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  // User Accounts & Password Management Handlers (Admin Only)
+  const handleOpenEditUser = (u: any) => {
+    setEditingUser(u);
+    setEditUserForm({
+      accountId: u.accountId,
+      email: u.email,
+      password: '', // Blank by default, admin fills to change password
+      role: u.role,
+      status: u.status
+    });
+    setUserActionError(null);
+    setUserActionSuccess(null);
+    setShowPassword(false);
+    setShowEditUserModal(true);
+  };
+
+  const handleSaveUserEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    setUserActionError(null);
+    setUserActionSuccess(null);
+    setUserActionLoading(true);
+
+    try {
+      const payload: any = {
+        accountId: editUserForm.accountId.trim().toUpperCase(),
+        email: editUserForm.email.trim(),
+        role: editUserForm.role,
+        status: editUserForm.status
+      };
+      if (editUserForm.password && editUserForm.password.trim()) {
+        payload.password = editUserForm.password.trim();
+      }
+
+      const res = await api.patch<{ success: boolean; message?: string }>(
+        `/admin/users/${editingUser.id}`,
+        payload
+      );
+
+      if (res.success) {
+        setUserActionSuccess(res.message || 'User credentials updated successfully!');
+        await loadAllData();
+        setTimeout(() => {
+          setShowEditUserModal(false);
+          setUserActionSuccess(null);
+        }, 1200);
+      }
+    } catch (err: any) {
+      setUserActionError(err.message || 'Failed to update user credentials.');
+    } finally {
+      setUserActionLoading(false);
+    }
+  };
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUserActionError(null);
+    setUserActionSuccess(null);
+    setUserActionLoading(true);
+
+    try {
+      const payload = {
+        accountId: newUserForm.accountId.trim().toUpperCase(),
+        email: newUserForm.email.trim(),
+        password: newUserForm.password.trim(),
+        role: newUserForm.role
+      };
+
+      const res = await api.post<{ success: boolean; message?: string }>(
+        '/admin/users',
+        payload
+      );
+
+      if (res.success) {
+        setUserActionSuccess('User created successfully!');
+        setNewUserForm({ accountId: '', email: '', password: '', role: 'AUTHORITY' });
+        await loadAllData();
+        setTimeout(() => {
+          setShowCreateUserModal(false);
+          setUserActionSuccess(null);
+        }, 1200);
+      }
+    } catch (err: any) {
+      setUserActionError(err.message || 'Failed to create user account.');
+    } finally {
+      setUserActionLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async (u: any) => {
+    if (u.id === user?.id) {
+      alert('You cannot delete your own active admin account.');
+      return;
+    }
+    if (!window.confirm(`Are you sure you want to permanently delete user "${u.accountId}"?`)) {
+      return;
+    }
+
+    try {
+      await api.delete(`/admin/users/${u.id}`);
+      await loadAllData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete user.');
+    }
+  };
+
+  const handleToggleUserStatus = async (u: any) => {
+    const nextStatus = u.status === 'ACTIVE' ? 'DISABLED' : 'ACTIVE';
+    try {
+      await api.patch(`/admin/users/${u.id}/status`, { status: nextStatus });
+      await loadAllData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to toggle user status.');
+    }
+  };
+
   // Settings update
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -483,6 +629,7 @@ export const AdminDashboard: React.FC = () => {
       <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-200 dark:border-slate-800 scrollbar-none text-xs font-bold">
         {[
           { id: 'ANALYTICS', label: 'Analytics', icon: BarChart3 },
+          { id: 'USERS', label: 'Users & Passwords', icon: Key },
           { id: 'AUTHORITIES', label: 'Authorities', icon: Users },
           { id: 'DEPARTMENTS', label: 'Departments', icon: Building2 },
           { id: 'COLLEGE_INFO', label: 'College Info', icon: FileText },
@@ -573,6 +720,507 @@ export const AdminDashboard: React.FC = () => {
             </>
           ) : (
             <div className="py-20 text-center text-slate-400">Loading analytics...</div>
+          )}
+        </div>
+      )}
+
+      {/* TAB: USERS & PASSWORDS (ADMIN-EXCLUSIVE CONTROL) */}
+      {activeTab === 'USERS' && (
+        <div className="space-y-6 animate-in fade-in">
+          {/* Header & Quick Action */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-2xl">
+                <Key className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  User Accounts & Passwords
+                  <span className="text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 font-bold px-2 py-0.5 rounded-full">
+                    Admin Exclusive
+                  </span>
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Full control: Change login User IDs, reset passwords, update roles, or deactivate access for any account.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                setUserActionError(null);
+                setUserActionSuccess(null);
+                setShowCreateUserModal(true);
+              }}
+              className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-2xl shadow-sm flex items-center justify-center gap-2 transition"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Create New User</span>
+            </button>
+          </div>
+
+          {/* Search & Role Filter */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="relative flex-1 max-w-md">
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search by User ID, Email, Role, or Name..."
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+            </div>
+
+            <div className="flex items-center gap-1.5 overflow-x-auto text-xs font-semibold">
+              {[
+                { id: 'ALL', label: `All (${usersList.length})` },
+                { id: 'ADMIN', label: 'Admins' },
+                { id: 'AUTHORITY', label: 'Authorities' },
+                { id: 'RECEPTION', label: 'Reception' }
+              ].map((filter) => (
+                <button
+                  key={filter.id}
+                  onClick={() => setUserRoleFilter(filter.id)}
+                  className={`px-3 py-1.5 rounded-xl transition ${
+                    userRoleFilter === filter.id
+                      ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm'
+                      : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100'
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Users Table */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="border-b border-slate-200 dark:border-slate-800 text-slate-400 uppercase tracking-wider text-[10px] bg-slate-50/50 dark:bg-slate-900/50">
+                  <tr>
+                    <th className="py-3 px-4">User ID (Login Username)</th>
+                    <th className="py-3 px-4">Role</th>
+                    <th className="py-3 px-4">Linked Profile</th>
+                    <th className="py-3 px-4">Email</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                  {usersList
+                    .filter((u) => {
+                      const q = userSearch.toLowerCase();
+                      const matchesSearch =
+                        u.accountId?.toLowerCase().includes(q) ||
+                        u.email?.toLowerCase().includes(q) ||
+                        u.role?.toLowerCase().includes(q) ||
+                        u.authorityProfile?.name?.toLowerCase().includes(q);
+
+                      const matchesRole =
+                        userRoleFilter === 'ALL' ||
+                        (userRoleFilter === 'ADMIN' && (u.role === 'SUPER_ADMIN' || u.role === 'COLLEGE_ADMIN')) ||
+                        (userRoleFilter === 'AUTHORITY' && u.role === 'AUTHORITY') ||
+                        (userRoleFilter === 'RECEPTION' && u.role === 'RECEPTION');
+
+                      return matchesSearch && matchesRole;
+                    })
+                    .map((u) => {
+                      const isSuperAdmin = u.role === 'SUPER_ADMIN';
+                      const isCollegeAdmin = u.role === 'COLLEGE_ADMIN';
+                      const isReception = u.role === 'RECEPTION';
+                      const isAuthority = u.role === 'AUTHORITY';
+
+                      const roleBadgeColor = isSuperAdmin
+                        ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300'
+                        : isCollegeAdmin
+                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'
+                        : isAuthority
+                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
+                        : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300';
+
+                      return (
+                        <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+                          <td className="py-3.5 px-4 font-mono font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-blue-600 dark:text-blue-400">
+                              {u.accountId}
+                            </span>
+                            {u.id === user?.id && (
+                              <span className="text-[10px] font-sans font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded">
+                                (You)
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${roleBadgeColor}`}>
+                              {u.role}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            {u.authorityProfile ? (
+                              <div>
+                                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                                  {u.authorityProfile.name}
+                                </span>
+                                <span className="block text-[11px] text-slate-400">
+                                  {u.authorityProfile.designation}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 text-xs">
+                                {isSuperAdmin || isCollegeAdmin ? 'Executive System Admin' : 'Campus Receptionist'}
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400">
+                            {u.email}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <button
+                              onClick={() => handleToggleUserStatus(u)}
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition flex items-center gap-1 ${
+                                u.status === 'ACTIVE'
+                                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 hover:bg-rose-100 hover:text-rose-800'
+                                  : 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300 hover:bg-emerald-100 hover:text-emerald-800'
+                              }`}
+                              title="Click to toggle status"
+                            >
+                              {u.status === 'ACTIVE' ? (
+                                <>
+                                  <CheckCircle className="w-3 h-3" />
+                                  <span>Active</span>
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle className="w-3 h-3" />
+                                  <span>Disabled</span>
+                                </>
+                              )}
+                            </button>
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => handleOpenEditUser(u)}
+                                className="px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-xl font-semibold flex items-center gap-1.5 transition text-xs shadow-sm"
+                                title="Change User ID or Password"
+                              >
+                                <Key className="w-3.5 h-3.5" />
+                                <span>Change ID / Password</span>
+                              </button>
+
+                              {u.id !== user?.id && (
+                                <button
+                                  onClick={() => handleDeleteUser(u)}
+                                  className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition"
+                                  title="Delete User"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+
+              {usersList.length === 0 && (
+                <div className="py-12 text-center text-slate-400 text-xs">
+                  No users loaded. Click refresh above to load user accounts.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* EDIT USER ID & PASSWORD MODAL */}
+          {showEditUserModal && editingUser && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-5 animate-in zoom-in-95">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl">
+                      <Key className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-900 dark:text-white text-sm">
+                        Edit Credentials: {editingUser.accountId}
+                      </h3>
+                      <p className="text-[11px] text-slate-400">
+                        Admin can update the login User ID, reset password, or change role.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowEditUserModal(false)}
+                    className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {userActionError && (
+                  <div className="p-3 bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs rounded-xl">
+                    {userActionError}
+                  </div>
+                )}
+
+                {userActionSuccess && (
+                  <div className="p-3 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300 text-xs rounded-xl flex items-center gap-2">
+                    <Check className="w-4 h-4" />
+                    <span>{userActionSuccess}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleSaveUserEdit} className="space-y-4 text-xs">
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      User ID (Login Account ID)
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editUserForm.accountId}
+                      onChange={(e) => setEditUserForm({ ...editUserForm, accountId: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl font-mono font-bold text-blue-600 dark:text-blue-400 focus:ring-2 focus:ring-blue-500 focus:outline-none uppercase"
+                    />
+                    <span className="text-[10px] text-slate-400 mt-1 block">
+                      The ID used to log in (e.g. DIRECTOR-001, ADMIN-001, RECEPTION-01).
+                    </span>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      New Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="Leave blank to keep existing password"
+                        value={editUserForm.password}
+                        onChange={(e) => setEditUserForm({ ...editUserForm, password: e.target.value })}
+                        className="w-full pl-3.5 pr-10 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    <span className="text-[10px] text-slate-400 mt-1 block">
+                      Enter at least 6 characters if you want to reset this user's password.
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Email Address
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={editUserForm.email}
+                        onChange={(e) => setEditUserForm({ ...editUserForm, email: e.target.value })}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        System Role
+                      </label>
+                      <select
+                        value={editUserForm.role}
+                        onChange={(e) => setEditUserForm({ ...editUserForm, role: e.target.value })}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      >
+                        <option value="SUPER_ADMIN">Super Admin</option>
+                        <option value="COLLEGE_ADMIN">College Admin</option>
+                        <option value="AUTHORITY">Authority / Faculty Head</option>
+                        <option value="RECEPTION">Reception Staff</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Account Status
+                    </label>
+                    <select
+                      value={editUserForm.status}
+                      onChange={(e) => setEditUserForm({ ...editUserForm, status: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    >
+                      <option value="ACTIVE">ACTIVE (Can log in)</option>
+                      <option value="DISABLED">DISABLED (Login blocked)</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setShowEditUserModal(false)}
+                      className="px-4 py-2 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-semibold"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={userActionLoading}
+                      className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md flex items-center gap-2 transition disabled:opacity-50"
+                    >
+                      {userActionLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Saving Changes...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4" />
+                          <span>Save Credentials</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* CREATE NEW USER MODAL */}
+          {showCreateUserModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-5 animate-in zoom-in-95">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-xl">
+                      <Plus className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-900 dark:text-white text-sm">
+                        Create New User Account
+                      </h3>
+                      <p className="text-[11px] text-slate-400">
+                        Create login credentials for a new authority, receptionist, or administrator.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowCreateUserModal(false)}
+                    className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {userActionError && (
+                  <div className="p-3 bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs rounded-xl">
+                    {userActionError}
+                  </div>
+                )}
+
+                {userActionSuccess && (
+                  <div className="p-3 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300 text-xs rounded-xl flex items-center gap-2">
+                    <Check className="w-4 h-4" />
+                    <span>{userActionSuccess}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleCreateUser} className="space-y-4 text-xs">
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      User ID (Login Account ID) *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. DEAN-001, STAFF-01, ADMIN-02"
+                      value={newUserForm.accountId}
+                      onChange={(e) => setNewUserForm({ ...newUserForm, accountId: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl font-mono font-bold text-blue-600 dark:text-blue-400 focus:ring-2 focus:ring-blue-500 focus:outline-none uppercase"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Initial Password *
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      placeholder="At least 6 characters"
+                      value={newUserForm.password}
+                      onChange={(e) => setNewUserForm({ ...newUserForm, password: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Email Address *
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        placeholder="user@college.edu"
+                        value={newUserForm.email}
+                        onChange={(e) => setNewUserForm({ ...newUserForm, email: e.target.value })}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Role *
+                      </label>
+                      <select
+                        value={newUserForm.role}
+                        onChange={(e) => setNewUserForm({ ...newUserForm, role: e.target.value })}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      >
+                        <option value="AUTHORITY">Authority / Faculty Head</option>
+                        <option value="RECEPTION">Reception Staff</option>
+                        <option value="COLLEGE_ADMIN">College Admin</option>
+                        <option value="SUPER_ADMIN">Super Admin</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setShowCreateUserModal(false)}
+                      className="px-4 py-2 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-semibold"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={userActionLoading}
+                      className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md flex items-center gap-2 transition disabled:opacity-50"
+                    >
+                      {userActionLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Creating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-4 h-4" />
+                          <span>Create Account</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
           )}
         </div>
       )}
