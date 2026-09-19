@@ -155,13 +155,55 @@ app.use(errorHandler);
 const server = http.createServer(app);
 realTimeService.init(server);
 
-server.listen(config.port, () => {
-  console.log(`=======================================================`);
-  console.log(`RAVAN College Receptionist & Appointment System`);
-  console.log(`Server running on: http://localhost:${config.port}`);
-  console.log(`WebSocket endpoint: ws://localhost:${config.port}/ws`);
-  console.log(`Environment: ${config.nodeEnv}`);
-  console.log(`=======================================================`);
+// Auto-seed initial demo accounts if database is fresh/empty on boot
+async function ensureInitialData() {
+  try {
+    const userCount = await prisma.user.count();
+    if (userCount === 0) {
+      console.log('Fresh database detected. Auto-seeding initial demo accounts...');
+      const bcrypt = (await import('bcryptjs')).default;
+      const adminPass = await bcrypt.hash('Admin@123', 10);
+      const receptionPass = await bcrypt.hash('Reception@123', 10);
+      const directorPass = await bcrypt.hash('Director@123', 10);
+      const principalPass = await bcrypt.hash('Principal@123', 10);
+
+      await prisma.user.createMany({
+        data: [
+          { accountId: 'ADMIN-001', email: 'admin@college.edu', passwordHash: adminPass, role: 'SUPER_ADMIN', status: 'ACTIVE' },
+          { accountId: 'RECEPTION-001', email: 'reception@college.edu', passwordHash: receptionPass, role: 'RECEPTION', status: 'ACTIVE' },
+          { accountId: 'DIRECTOR-001', email: 'director@college.edu', passwordHash: directorPass, role: 'AUTHORITY', status: 'ACTIVE' },
+          { accountId: 'PRINCIPAL-001', email: 'principal@college.edu', passwordHash: principalPass, role: 'AUTHORITY', status: 'ACTIVE' }
+        ]
+      });
+
+      await prisma.applicationSettings.upsert({
+        where: { id: 'default' },
+        update: {},
+        create: {
+          id: 'default',
+          collegeName: 'RAVAN Institute of Technology & Management',
+          tagline: 'AI Visitor & Appointment Management System',
+          themeColor: '#1e3a8a',
+          defaultLanguage: 'en',
+          isSetupComplete: true
+        }
+      });
+      console.log('Initial accounts and settings auto-seeded successfully.');
+    }
+  } catch (err) {
+    console.warn('Auto-seed check note:', err);
+  }
+}
+
+ensureInitialData().finally(() => {
+  server.listen(config.port, () => {
+    console.log(`=======================================================`);
+    console.log(`RAVAN College Receptionist & Appointment System`);
+    console.log(`Server running on: http://localhost:${config.port}`);
+    console.log(`WebSocket endpoint: ws://localhost:${config.port}/ws`);
+    console.log(`Environment: ${config.nodeEnv}`);
+    console.log(`=======================================================`);
+  });
 });
 
 export { app, server };
