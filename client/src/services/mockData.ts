@@ -62,7 +62,7 @@ export interface MockUser {
 }
 
 const STORAGE_KEYS = {
-  INITIALIZED: 'robo_mock_initialized_v2',
+  INITIALIZED: 'robo_mock_initialized_v4',
   SETTINGS: 'robo_mock_settings',
   DEPARTMENTS: 'robo_mock_departments',
   AUTHORITIES: 'robo_mock_authorities',
@@ -418,7 +418,10 @@ function setStorage(key: string, val: any): void {
 }
 
 export function initMockStorage(): void {
-  if (!localStorage.getItem(STORAGE_KEYS.INITIALIZED)) {
+  const isInit = localStorage.getItem(STORAGE_KEYS.INITIALIZED);
+  const existingUsers = getStorage<MockUser[]>(STORAGE_KEYS.USERS, []);
+
+  if (!isInit || existingUsers.length === 0) {
     setStorage(STORAGE_KEYS.DEPARTMENTS, defaultDepartments);
     setStorage(STORAGE_KEYS.AUTHORITIES, defaultAuthorities);
     setStorage(STORAGE_KEYS.USERS, defaultUsers);
@@ -454,7 +457,13 @@ export function handleMockRoute(url: string, method: string = 'GET', body: any =
       throw new Error('Not authenticated');
     }
     const users = getStorage<MockUser[]>(STORAGE_KEYS.USERS, defaultUsers);
-    const matched = users.find((u) => `mock-jwt-token-${u.accountId}` === activeToken) || users[0];
+    const matched = users.find(
+      (u) =>
+        `mock-jwt-token-${u.id}` === activeToken ||
+        `mock-jwt-token-${u.accountId}` === activeToken ||
+        `mock-jwt-token-${u.accountId.toLowerCase()}` === activeToken.toLowerCase()
+    ) || users[0];
+
     return {
       success: true,
       user: {
@@ -462,6 +471,7 @@ export function handleMockRoute(url: string, method: string = 'GET', body: any =
         accountId: matched.accountId,
         email: matched.email,
         role: matched.role,
+        status: matched.status,
         authorityProfile: matched.authorityProfile
       }
     };
@@ -469,14 +479,26 @@ export function handleMockRoute(url: string, method: string = 'GET', body: any =
 
   // 2. Auth Login
   if (pathname === '/auth/login' && method === 'POST') {
-    const { accountId, password } = body || {};
+    const rawId = (body?.identifier || body?.accountId || body?.email || '').trim().toLowerCase();
+    const rawPass = (body?.password || '').trim();
+
+    if (!rawId || !rawPass) {
+      throw new Error('Account ID and Password are required.');
+    }
+
     const users = getStorage<MockUser[]>(STORAGE_KEYS.USERS, defaultUsers);
     const found = users.find(
-      (u) => u.accountId.toLowerCase() === (accountId || '').trim().toLowerCase()
+      (u) =>
+        u.accountId.toLowerCase() === rawId ||
+        u.email.toLowerCase() === rawId
     );
 
-    if (!found || found.password !== password) {
-      throw new Error('Invalid Account ID or Password. Please verify demo credentials.');
+    if (!found || found.password !== rawPass) {
+      throw new Error('Invalid Account ID / Email or Password. Please verify credentials.');
+    }
+
+    if (found.status === 'DISABLED') {
+      throw new Error('Your account has been deactivated. Please contact the administrator.');
     }
 
     const token = `mock-jwt-token-${found.accountId}`;
@@ -488,6 +510,7 @@ export function handleMockRoute(url: string, method: string = 'GET', body: any =
         accountId: found.accountId,
         email: found.email,
         role: found.role,
+        status: found.status,
         authorityProfile: found.authorityProfile
       }
     };
