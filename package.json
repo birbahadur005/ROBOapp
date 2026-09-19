@@ -1,0 +1,27 @@
+{
+  "name": "ravan-college-receptionist-system",
+  "version": "1.0.0",
+  "description": "RAVAN College Receptionist - Production AI Visitor & Appointment Management System",
+  "private": true,
+  "scripts": {
+    "install:all": "npm --prefix server install && npm --prefix client install",
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "dev": "npm run dev:server",
+    "build:server": "npm --prefix server run build",
+    "build:client": "npm --prefix client run build",
+    "build": "npm run build:server && npm run build:client",
+    "start": "npm --prefix server run start",
+    "seed": "npm --prefix server run seed"
+  },
+  "keywords": [
+    "receptionist",
+    "visitor-management",
+    "appointment-system",
+    "pwa",
+    "college",
+    "gemini-ai"
+  ],
+  "author": "RAVAN Systems",
+  "license": "MIT"
+}

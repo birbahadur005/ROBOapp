@@ -1,0 +1,241 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String      @id @default(uuid())
+  accountId    String      @unique // e.g. DIRECTOR-001, ADMIN-001
+  email        String      @unique
+  passwordHash String
+  role         String      @default("AUTHORITY") // SUPER_ADMIN, COLLEGE_ADMIN, AUTHORITY, RECEPTION
+  status       String      @default("ACTIVE") // ACTIVE, DISABLED
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  authorityProfile Authority?
+  statusChanges    AppointmentStatusHistory[]
+  auditLogs        AuditLog[]
+}
+
+model Department {
+  id             String      @id @default(uuid())
+  name           String      @unique
+  code           String      @unique // e.g. CSE, ECE, ADM
+  description    String?
+  headName       String?
+  officeLocation String?
+  contactEmail   String?
+  contactPhone   String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  authorities    Authority[]
+}
+
+model Authority {
+  id                      String        @id @default(uuid())
+  userId                  String        @unique
+  user                    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  departmentId            String
+  department              Department    @relation(fields: [departmentId], references: [id])
+  name                    String
+  designation             String        // Director, Principal, HOD, Dean, etc.
+  officeLocation          String
+  visitingHours           String        // JSON encoded schedule: days, startTime, endTime, slotMinutes
+  profilePhotoUrl         String?
+  isAcceptingAppointments Boolean       @default(true)
+  bio                     String?
+  email                   String?
+  mobile                  String?
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+
+  appointments            Appointment[]
+}
+
+model Appointment {
+  id                 String                     @id @default(uuid())
+  referenceNo        String                     @unique // e.g. RAVAN-2026-000001
+  authorityId        String
+  authority          Authority                  @relation(fields: [authorityId], references: [id])
+  
+  // Visitor Information
+  visitorName        String
+  visitorMobile      String
+  visitorEmail       String?
+  studentId          String?
+  departmentName     String?
+  organization       String?
+  purpose            String
+  message            String?
+  numberOfVisitors   Int                        @default(1)
+  
+  // Requested Timing
+  requestedDate      String                     // YYYY-MM-DD
+  requestedTime      String                     // HH:MM (24-hour)
+  
+  // Scheduled Timing (Confirmed on ACCEPT / RESCHEDULE)
+  scheduledDate      String?                    // YYYY-MM-DD
+  scheduledTime      String?                    // HH:MM
+  durationMinutes    Int                        @default(15)
+  location           String?                    // Meeting room / office
+  
+  // Status: PENDING, ACCEPTED, REJECTED, RESCHEDULED, CANCELLED, COMPLETED, EXPIRED
+  status             String                     @default("PENDING")
+  
+  // Messages & Notes
+  authorityMessage   String?                    // Visible to the visitor
+  internalNotes      String?                    // Private to authority & admin
+  
+  // QR Pass & Security
+  qrToken            String?                    @unique // Encrypted/hashed token for QR verification
+  visitorPhotoId     String?
+  visitorPhoto       VisitorPhoto?              @relation(fields: [visitorPhotoId], references: [id])
+  
+  createdAt          DateTime                   @default(now())
+  updatedAt          DateTime                   @updatedAt
+
+  history            AppointmentStatusHistory[]
+}
+
+model VisitorPhoto {
+  id           String        @id @default(uuid())
+  filePath     String
+  mimeType     String
+  fileSize     Int
+  sha256Hash   String
+  uploadedAt   DateTime      @default(now())
+
+  appointments Appointment[]
+}
+
+model AppointmentStatusHistory {
+  id              String      @id @default(uuid())
+  appointmentId   String
+  appointment     Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  fromStatus      String
+  toStatus        String
+  changedByUserId String?
+  changedByUser   User?       @relation(fields: [changedByUserId], references: [id])
+  reason          String?
+  timestamp       DateTime    @default(now())
+}
+
+model CollegeInformation {
+  id          String   @id @default(uuid())
+  category    String   // ABOUT, ADMISSION, EXAMINATION, HOSTEL, TRANSPORT, HOURS, EMERGENCY
+  title       String
+  contentEn   String
+  contentHi   String
+  priority    Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CampusLocation {
+  id           String   @id @default(uuid())
+  name         String
+  category     String   // BUILDING, OFFICE, LAB, LIBRARY, CANTEEN, GATE, PARKING
+  locationCode String   @unique
+  description  String?
+  xCoord       Float    @default(50.0) // Percentage on interactive map 0-100
+  yCoord       Float    @default(50.0)
+  floorInfo    String?  // e.g. "Ground Floor", "1st Floor, Room 102"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Announcement {
+  id          String    @id @default(uuid())
+  title       String
+  description String
+  priority    String    @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  publishDate DateTime  @default(now())
+  expiryDate  DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String   // LOGIN, LOGOUT, CREATE_APPOINTMENT, ACCEPT_APPOINTMENT, etc.
+  entityType String   // APPOINTMENT, AUTHORITY, USER, SETTINGS
+  entityId   String?
+  ipAddress  String?
+  userAgent  String?
+  details    String?  // JSON string
+  timestamp  DateTime @default(now())
+}
+
+model ApplicationSettings {
+  id                         String   @id @default("default")
+  // 1. Identity & Branding (Site & App Settings)
+  siteName                   String   @default("RAVAN College Receptionist")
+  siteLogoUrl                String?
+  appName                    String   @default("RAVAN College Receptionist")
+  appShortName               String   @default("RAVAN Reception")
+  appLogoUrl                 String?
+  collegeName                String   @default("RAVAN Institute of Technology & Management")
+  tagline                    String   @default("AI Visitor & Appointment Management System")
+  logoUrl                    String?
+  themeColor                 String   @default("#1e3a8a")
+  darkModeDefault            Boolean  @default(false)
+
+  // 2. Contact & Campus
+  collegeEmail               String?  @default("info@college.edu")
+  collegePhone               String?  @default("+91 98765 43210")
+  emergencyPhone             String?  @default("+91 98765 99999")
+  collegeAddress             String?  @default("Main Campus Boulevard, Knowledge Park")
+  visitingHoursGeneral       String?  @default("10:00 AM - 04:00 PM")
+
+  // 3. Language & Localization
+  defaultLanguage            String   @default("en")
+  allowLanguageToggle        Boolean  @default(true)
+
+  // 4. Visitor Form & Photo Policy
+  allowCameraPhoto           Boolean  @default(true)
+  requireVisitorPhoto        Boolean  @default(false)
+  requiredVisitorFields      String   @default("[\"visitorName\",\"visitorMobile\",\"purpose\",\"requestedDate\",\"requestedTime\"]") // JSON array of field keys
+  photoSourceMode            String   @default("ALL") // ALL, CAMERA_ONLY, UPLOAD_ONLY
+
+  // 5. Appointment Rules & Scheduling
+  maxAdvanceBookingDays      Int      @default(14)
+  appointmentLeadTimeHours   Int      @default(2)
+  defaultSlotMinutes         Int      @default(15)
+  allowWeekendAppointments   Boolean  @default(false)
+  strictConflictPrevention   Boolean  @default(true)
+  maxVisitorsPerRequest      Int      @default(10)
+
+  // 6. Notifications & Alerts
+  soundAlertsEnabled         Boolean  @default(true)
+  browserNotificationsEnabled Boolean @default(true)
+  emailNotificationsEnabled  Boolean  @default(false)
+  smtpHost                   String?
+  smtpPort                   Int?     @default(587)
+  smtpUser                   String?
+  smtpPass                   String?
+  smtpFrom                   String?
+
+  // 7. AI Assistant Configuration
+  enableAIAssistant          Boolean  @default(true)
+  aiWelcomeMessage           String?  @default("Hello! I am your AI College Receptionist. How can I help you today?")
+  aiCustomInstructions      String?
+
+  // 8. Kiosk & Display Mode
+  kioskAutoResetSeconds      Int      @default(90) // Auto-reset to welcome screen on idle (0 = disabled)
+  kioskShowAnnouncements     Boolean  @default(true)
+  kioskShowCampusMap         Boolean  @default(true)
+
+  isSetupComplete            Boolean  @default(false)
+  updatedAt                  DateTime @updatedAt
+}
+

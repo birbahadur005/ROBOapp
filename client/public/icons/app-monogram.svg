@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <defs>
+    <linearGradient id="monoBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#020617;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e1b4b;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="neonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#38bdf8;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#818cf8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#c084fc;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="42" fill="url(#monoBg)" />
+  <!-- R Monogram -->
+  <path d="M60 148 L60 44 L110 44 C132 44 144 56 144 74 C144 89 134 100 118 103 L146 148 L118 148 L94 108 L84 108 L84 148 Z M84 64 L84 90 L108 90 C118 90 124 85 124 77 C124 69 118 64 108 64 Z" fill="url(#neonGrad)" />
+</svg>
