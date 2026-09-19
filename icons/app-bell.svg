@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <defs>
+    <linearGradient id="bellBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b0764;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6b21a8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="brassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fef08a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#fbbf24;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#b45309;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="42" fill="url(#bellBg)" />
+  <!-- Bell Button -->
+  <rect x="90" y="44" width="12" height="16" rx="4" fill="url(#brassGrad)" />
+  <!-- Bell Dome -->
+  <path d="M42 124 C42 74 150 74 150 124 Z" fill="url(#brassGrad)" />
+  <!-- Base Plate -->
+  <rect x="34" y="124" width="124" height="14" rx="7" fill="#e2e8f0" />
+  <rect x="26" y="136" width="140" height="12" rx="6" fill="#475569" />
+  <!-- Reflection Sheen -->
+  <path d="M60 114 C62 88 88 80 100 80" stroke="#ffffff" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.6" />
+</svg>
