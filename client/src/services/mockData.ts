@@ -24,6 +24,7 @@ export interface MockAuthority {
   email: string;
   mobile: string;
   avatarUrl?: string;
+  user?: { id?: string; accountId?: string; email?: string };
 }
 
 export interface MockAppointment {
@@ -62,7 +63,7 @@ export interface MockUser {
 }
 
 const STORAGE_KEYS = {
-  INITIALIZED: 'robo_mock_initialized_v5',
+  INITIALIZED: 'robo_mock_initialized_v6',
   SETTINGS: 'robo_mock_settings',
   DEPARTMENTS: 'robo_mock_departments',
   AUTHORITIES: 'robo_mock_authorities',
@@ -398,7 +399,17 @@ const defaultSettings = {
   aiWelcomeMessage: 'Hello! I am your AI College Receptionist. How can I help you today?',
   kioskAutoResetSeconds: 90,
   kioskShowAnnouncements: true,
-  kioskShowCampusMap: true
+  kioskShowCampusMap: true,
+  backgroundType: 'default',
+  backgroundColor: '#0f172a',
+  backgroundGradient: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)',
+  backgroundImageUrl: '',
+  backgroundVideoUrl: '',
+  backgroundOverlayOpacity: 60,
+  backgroundBlur: 0,
+  secondaryColor: '#3b82f6',
+  welcomeHeading: 'Welcome to',
+  heroBadgeText: 'Digital Reception Kiosk'
 };
 
 function getStorage<T>(key: string, defaultVal: T): T {
@@ -525,13 +536,13 @@ export function handleMockRoute(url: string, method: string = 'GET', body: any =
 
   // 4. Settings
   if (pathname === '/admin/settings') {
+    const current = { ...defaultSettings, ...getStorage(STORAGE_KEYS.SETTINGS, defaultSettings) };
     if (method === 'PATCH' || method === 'POST') {
-      const current = getStorage(STORAGE_KEYS.SETTINGS, defaultSettings);
       const updated = { ...current, ...body };
       setStorage(STORAGE_KEYS.SETTINGS, updated);
       return { success: true, settings: updated };
     }
-    return { success: true, settings: getStorage(STORAGE_KEYS.SETTINGS, defaultSettings) };
+    return { success: true, settings: current };
   }
 
   // 5. Upload Logo Mock
@@ -559,13 +570,24 @@ export function handleMockRoute(url: string, method: string = 'GET', body: any =
     return { success: true, departments: depts };
   }
 
-  const deleteDeptMatch = pathname.match(/^\/admin\/departments\/(.+)$/);
-  if (deleteDeptMatch && method === 'DELETE') {
-    const id = deleteDeptMatch[1];
+  const deptMatch = pathname.match(/^\/admin\/departments\/(.+)$/);
+  if (deptMatch) {
+    const id = deptMatch[1];
     let depts = getStorage<MockDepartment[]>(STORAGE_KEYS.DEPARTMENTS, defaultDepartments);
-    depts = depts.filter((d) => d.id !== id);
-    setStorage(STORAGE_KEYS.DEPARTMENTS, depts);
-    return { success: true };
+    if (method === 'PATCH' || method === 'PUT') {
+      const idx = depts.findIndex((d) => d.id === id);
+      if (idx !== -1) {
+        depts[idx] = { ...depts[idx], ...body };
+        setStorage(STORAGE_KEYS.DEPARTMENTS, depts);
+        return { success: true, department: depts[idx] };
+      }
+      throw new Error('Department not found');
+    }
+    if (method === 'DELETE') {
+      depts = depts.filter((d) => d.id !== id);
+      setStorage(STORAGE_KEYS.DEPARTMENTS, depts);
+      return { success: true };
+    }
   }
 
   // 7. Authorities
@@ -581,6 +603,41 @@ export function handleMockRoute(url: string, method: string = 'GET', body: any =
     const auth = auths.find((a) => a.id === id);
     if (!auth) throw new Error('Authority not found');
     return { success: true, authority: auth };
+  }
+
+  const adminAuthMatch = pathname.match(/^\/admin\/authorities\/(.+)$/);
+  if (adminAuthMatch) {
+    const id = adminAuthMatch[1];
+    let auths = getStorage<MockAuthority[]>(STORAGE_KEYS.AUTHORITIES, defaultAuthorities);
+    if (method === 'PATCH' || method === 'PUT') {
+      const idx = auths.findIndex((a) => a.id === id);
+      if (idx !== -1) {
+        auths[idx] = { ...auths[idx], ...body };
+        setStorage(STORAGE_KEYS.AUTHORITIES, auths);
+
+        // Sync with users list if credentials or email changed
+        if (body.password || body.email || body.accountId) {
+          let users = getStorage<MockUser[]>(STORAGE_KEYS.USERS, defaultUsers);
+          const uIdx = users.findIndex(
+            (u) => u.id === auths[idx].userId || u.accountId === auths[idx].user?.accountId || u.email === auths[idx].email
+          );
+          if (uIdx !== -1) {
+            if (body.password) users[uIdx].password = body.password;
+            if (body.email) users[uIdx].email = body.email;
+            if (body.accountId) users[uIdx].accountId = body.accountId;
+            setStorage(STORAGE_KEYS.USERS, users);
+          }
+        }
+
+        return { success: true, authority: auths[idx] };
+      }
+      throw new Error('Authority not found');
+    }
+    if (method === 'DELETE') {
+      auths = auths.filter((a) => a.id !== id);
+      setStorage(STORAGE_KEYS.AUTHORITIES, auths);
+      return { success: true, message: 'Authority deleted successfully' };
+    }
   }
 
   if (pathname === '/admin/authorities' && method === 'POST') {

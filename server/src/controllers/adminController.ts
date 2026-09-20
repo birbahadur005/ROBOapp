@@ -161,6 +161,16 @@ export class AdminController {
           ...(data.logoUrl !== undefined && data.siteLogoUrl === undefined ? { logoUrl: data.logoUrl, siteLogoUrl: data.logoUrl } : {}),
           ...(data.tagline !== undefined ? { tagline: data.tagline } : {}),
           ...(data.themeColor !== undefined ? { themeColor: data.themeColor } : {}),
+          ...(data.secondaryColor !== undefined ? { secondaryColor: data.secondaryColor } : {}),
+          ...(data.welcomeHeading !== undefined ? { welcomeHeading: data.welcomeHeading } : {}),
+          ...(data.heroBadgeText !== undefined ? { heroBadgeText: data.heroBadgeText } : {}),
+          ...(data.backgroundType !== undefined ? { backgroundType: data.backgroundType } : {}),
+          ...(data.backgroundColor !== undefined ? { backgroundColor: data.backgroundColor } : {}),
+          ...(data.backgroundGradient !== undefined ? { backgroundGradient: data.backgroundGradient } : {}),
+          ...(data.backgroundImageUrl !== undefined ? { backgroundImageUrl: data.backgroundImageUrl } : {}),
+          ...(data.backgroundVideoUrl !== undefined ? { backgroundVideoUrl: data.backgroundVideoUrl } : {}),
+          ...(data.backgroundOverlayOpacity !== undefined ? { backgroundOverlayOpacity: Number(data.backgroundOverlayOpacity) } : {}),
+          ...(data.backgroundBlur !== undefined ? { backgroundBlur: Number(data.backgroundBlur) } : {}),
           ...(typeof data.darkModeDefault === 'boolean' ? { darkModeDefault: data.darkModeDefault } : {}),
           
           ...(data.collegeEmail !== undefined ? { collegeEmail: data.collegeEmail } : {}),
@@ -457,10 +467,24 @@ export class AdminController {
           ...(data.officeLocation ? { officeLocation: data.officeLocation } : {}),
           ...(data.visitingHours ? { visitingHours: typeof data.visitingHours === 'string' ? data.visitingHours : JSON.stringify(data.visitingHours) } : {}),
           ...(typeof data.isAcceptingAppointments === 'boolean' ? { isAcceptingAppointments: data.isAcceptingAppointments } : {}),
+          ...(data.email ? { email: data.email.trim().toLowerCase() } : {}),
+          ...(data.mobile !== undefined ? { mobile: data.mobile } : {}),
           ...(data.bio !== undefined ? { bio: data.bio } : {})
         },
         include: { department: true, user: true }
       });
+
+      // Sync credentials to linked user account if provided
+      if (updated.userId && (data.password || data.accountId || data.email)) {
+        const userUpdateData: any = {};
+        if (data.password) userUpdateData.passwordHash = await bcrypt.hash(data.password, 10);
+        if (data.accountId) userUpdateData.accountId = data.accountId.trim().toUpperCase();
+        if (data.email) userUpdateData.email = data.email.trim().toLowerCase();
+        await prisma.user.update({
+          where: { id: updated.userId },
+          data: userUpdateData
+        }).catch(() => {});
+      }
 
       await AuditService.log({
         userId: user.id,
@@ -472,6 +496,39 @@ export class AdminController {
       });
 
       res.json({ success: true, authority: updated });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public static async deleteAuthority(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const id = req.params.id as string;
+      const user = req.user!;
+
+      const authority = await prisma.authority.findUnique({ where: { id } });
+      if (!authority) {
+        return res.status(404).json({ success: false, message: 'Authority not found.' });
+      }
+
+      await prisma.authority.delete({ where: { id } });
+
+      if (authority.userId) {
+        await prisma.user.update({
+          where: { id: authority.userId },
+          data: { status: 'INACTIVE' }
+        }).catch(() => {});
+      }
+
+      await AuditService.log({
+        userId: user.id,
+        action: 'DELETE_AUTHORITY',
+        entityType: 'AUTHORITY',
+        entityId: id,
+        req
+      });
+
+      res.json({ success: true, message: 'Authority deleted successfully.' });
     } catch (err) {
       next(err);
     }

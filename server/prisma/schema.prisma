@@ -188,6 +188,16 @@ model ApplicationSettings {
   tagline                    String   @default("AI Visitor & Appointment Management System")
   logoUrl                    String?
   themeColor                 String   @default("#1e3a8a")
+  secondaryColor             String?  @default("#3b82f6")
+  welcomeHeading             String?  @default("Welcome to")
+  heroBadgeText              String?  @default("Digital Reception Kiosk")
+  backgroundType             String?  @default("default")
+  backgroundColor            String?  @default("#0f172a")
+  backgroundGradient         String?  @default("linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)")
+  backgroundImageUrl         String?
+  backgroundVideoUrl         String?
+  backgroundOverlayOpacity   Int?     @default(60)
+  backgroundBlur             Int?     @default(0)
   darkModeDefault            Boolean  @default(false)
 
   // 2. Contact & Campus

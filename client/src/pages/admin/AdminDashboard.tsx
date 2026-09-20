@@ -41,7 +41,10 @@ import {
   Laptop,
   Key,
   Eye,
-  EyeOff
+  EyeOff,
+  Video,
+  Sliders,
+  Play
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -56,7 +59,60 @@ const THEME_COLOR_PRESETS = [
   { name: 'Cyber Violet', hex: '#7c3aed' },
   { name: 'Crimson Red', hex: '#dc2626' },
   { name: 'Amber Bronze', hex: '#d97706' },
+  { name: 'Futuristic Cyan', hex: '#0891b2' },
   { name: 'Slate Charcoal', hex: '#334155' }
+];
+
+const SECONDARY_COLOR_PRESETS = [
+  { name: 'Vibrant Blue', hex: '#3b82f6' },
+  { name: 'Sky Cyan', hex: '#0284c7' },
+  { name: 'Emerald Mint', hex: '#10b981' },
+  { name: 'Purple Neon', hex: '#8b5cf6' },
+  { name: 'Pink Rose', hex: '#ec4899' },
+  { name: 'Amber Gold', hex: '#f59e0b' }
+];
+
+const BACKGROUND_VIDEO_PRESETS = [
+  {
+    id: 'particles',
+    name: 'Tech Particles Loop',
+    url: 'https://assets.mixkit.co/videos/preview/mixkit-digital-animation-of-screens-with-code-31913-large.mp4',
+    badge: 'High-Tech'
+  },
+  {
+    id: 'campus',
+    name: 'Cyber Waves Loop',
+    url: 'https://assets.mixkit.co/videos/preview/mixkit-flowing-tunnel-of-purple-and-blue-light-43615-large.mp4',
+    badge: 'Futuristic'
+  },
+  {
+    id: 'lines',
+    name: 'Neon Grid Motion',
+    url: 'https://assets.mixkit.co/videos/preview/mixkit-glowing-lines-in-a-dark-background-31745-large.mp4',
+    badge: 'Ambient'
+  },
+  {
+    id: 'bokeh',
+    name: 'Soft Blue Bokeh',
+    url: 'https://assets.mixkit.co/videos/preview/mixkit-blue-particles-floating-slowly-in-the-air-42359-large.mp4',
+    badge: 'Subtle'
+  }
+];
+
+const BACKGROUND_GRADIENT_PRESETS = [
+  { name: 'Deep Space', css: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)' },
+  { name: 'Cyber Neon', css: 'linear-gradient(135deg, #090d16 0%, #1e1035 40%, #0c1a2e 100%)' },
+  { name: 'Royal Indigo', css: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #0f172a 100%)' },
+  { name: 'Oceanic Abyss', css: 'linear-gradient(135deg, #022c22 0%, #064e3b 50%, #0f172a 100%)' },
+  { name: 'Midnight Crimson', css: 'linear-gradient(135deg, #450a0a 0%, #1e1b4b 50%, #0f172a 100%)' },
+  { name: 'Sunset Glow', css: 'linear-gradient(135deg, #31102f 0%, #1c1917 50%, #0f172a 100%)' }
+];
+
+const BACKGROUND_IMAGE_PRESETS = [
+  { name: 'Modern Campus', url: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1600&q=80' },
+  { name: 'Grand Library', url: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=1600&q=80' },
+  { name: 'Tech Laboratory', url: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1600&q=80' },
+  { name: 'Cyber Architecture', url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1600&q=80' }
 ];
 
 const APP_ICON_PRESETS = [
@@ -155,6 +211,39 @@ export const AdminDashboard: React.FC = () => {
   const [userActionError, setUserActionError] = useState<string | null>(null);
   const [userActionSuccess, setUserActionSuccess] = useState<string | null>(null);
 
+  // Authority Edit State
+  const [showEditAuthModal, setShowEditAuthModal] = useState(false);
+  const [editingAuth, setEditingAuth] = useState<any | null>(null);
+  const [editAuthForm, setEditAuthForm] = useState({
+    id: '',
+    name: '',
+    designation: '',
+    departmentId: '',
+    officeLocation: '',
+    email: '',
+    mobile: '',
+    bio: '',
+    isAcceptingAppointments: true,
+    password: ''
+  });
+  const [authActionLoading, setAuthActionLoading] = useState(false);
+  const [authActionError, setAuthActionError] = useState<string | null>(null);
+  const [authActionSuccess, setAuthActionSuccess] = useState<string | null>(null);
+
+  // Department Edit State
+  const [showEditDeptModal, setShowEditDeptModal] = useState(false);
+  const [editingDept, setEditingDept] = useState<any | null>(null);
+  const [editDeptForm, setEditDeptForm] = useState({
+    id: '',
+    name: '',
+    code: '',
+    description: '',
+    officeLocation: ''
+  });
+  const [deptActionLoading, setDeptActionLoading] = useState(false);
+  const [deptActionError, setDeptActionError] = useState<string | null>(null);
+  const [deptActionSuccess, setDeptActionSuccess] = useState<string | null>(null);
+
   // Logo upload state
   const [uploadingSiteLogo, setUploadingSiteLogo] = useState(false);
   const [uploadingAppLogo, setUploadingAppLogo] = useState(false);
@@ -178,6 +267,19 @@ export const AdminDashboard: React.FC = () => {
     logoUrl: '',
 
     themeColor: '#1e3a8a',
+    secondaryColor: '#3b82f6',
+    welcomeHeading: 'Welcome to',
+    heroBadgeText: 'Digital Reception Kiosk',
+
+    // Full Background Customization
+    backgroundType: 'default',
+    backgroundColor: '#0f172a',
+    backgroundGradient: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)',
+    backgroundImageUrl: '',
+    backgroundVideoUrl: '',
+    backgroundOverlayOpacity: 60,
+    backgroundBlur: 0,
+
     darkModeDefault: false,
 
     collegeEmail: '',
@@ -276,6 +378,18 @@ export const AdminDashboard: React.FC = () => {
         logoUrl: settings.logoUrl || settings.siteLogoUrl || '',
 
         themeColor: settings.themeColor || '#1e3a8a',
+        secondaryColor: settings.secondaryColor || '#3b82f6',
+        welcomeHeading: settings.welcomeHeading || 'Welcome to',
+        heroBadgeText: settings.heroBadgeText || 'Digital Reception Kiosk',
+
+        backgroundType: settings.backgroundType || 'default',
+        backgroundColor: settings.backgroundColor || '#0f172a',
+        backgroundGradient: settings.backgroundGradient || 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)',
+        backgroundImageUrl: settings.backgroundImageUrl || '',
+        backgroundVideoUrl: settings.backgroundVideoUrl || '',
+        backgroundOverlayOpacity: settings.backgroundOverlayOpacity ?? 60,
+        backgroundBlur: settings.backgroundBlur ?? 0,
+
         darkModeDefault: !!settings.darkModeDefault,
 
         collegeEmail: settings.collegeEmail || '',
@@ -372,6 +486,45 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handleOpenEditDept = (dept: any) => {
+    setEditingDept(dept);
+    setEditDeptForm({
+      id: dept.id,
+      name: dept.name || '',
+      code: dept.code || '',
+      description: dept.description || '',
+      officeLocation: dept.officeLocation || ''
+    });
+    setDeptActionError(null);
+    setDeptActionSuccess(null);
+    setShowEditDeptModal(true);
+  };
+
+  const handleSaveEditDept = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingDept) return;
+    setDeptActionLoading(true);
+    setDeptActionError(null);
+    try {
+      const res = await api.patch<{ success: boolean; department?: any; message?: string }>(
+        `/admin/departments/${editingDept.id}`,
+        editDeptForm
+      );
+      if (res.success) {
+        setDeptActionSuccess('Department updated successfully!');
+        await loadAllData();
+        setTimeout(() => {
+          setShowEditDeptModal(false);
+          setDeptActionSuccess(null);
+        }, 900);
+      }
+    } catch (err: any) {
+      setDeptActionError(err.message || 'Failed to update department');
+    } finally {
+      setDeptActionLoading(false);
+    }
+  };
+
   // Authority CRUD
   const handleCreateAuthority = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -383,6 +536,120 @@ export const AdminDashboard: React.FC = () => {
     } catch (err: any) {
       alert(err.message || 'Failed to create authority');
     }
+  };
+
+  const handleOpenEditAuthority = (auth: any) => {
+    setEditingAuth(auth);
+    setEditAuthForm({
+      id: auth.id,
+      name: auth.name || '',
+      designation: auth.designation || '',
+      departmentId: auth.departmentId || auth.department?.id || (departments[0]?.id || ''),
+      officeLocation: auth.officeLocation || '',
+      email: auth.email || auth.user?.email || '',
+      mobile: auth.mobile || '',
+      bio: auth.bio || '',
+      isAcceptingAppointments: auth.isAcceptingAppointments !== false,
+      password: ''
+    });
+    setAuthActionError(null);
+    setAuthActionSuccess(null);
+    setShowEditAuthModal(true);
+  };
+
+  const handleSaveEditAuthority = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingAuth) return;
+    setAuthActionLoading(true);
+    setAuthActionError(null);
+    try {
+      const payload: any = {
+        name: editAuthForm.name.trim(),
+        designation: editAuthForm.designation.trim(),
+        departmentId: editAuthForm.departmentId,
+        officeLocation: editAuthForm.officeLocation.trim(),
+        email: editAuthForm.email.trim(),
+        mobile: editAuthForm.mobile.trim(),
+        bio: editAuthForm.bio.trim(),
+        isAcceptingAppointments: editAuthForm.isAcceptingAppointments
+      };
+      if (editAuthForm.password.trim()) {
+        payload.password = editAuthForm.password.trim();
+      }
+
+      const res = await api.patch<{ success: boolean; authority?: any; message?: string }>(
+        `/admin/authorities/${editingAuth.id}`,
+        payload
+      );
+      if (res.success) {
+        setAuthActionSuccess('Authority profile updated successfully!');
+        await loadAllData();
+        setTimeout(() => {
+          setShowEditAuthModal(false);
+          setAuthActionSuccess(null);
+        }, 900);
+      }
+    } catch (err: any) {
+      setAuthActionError(err.message || 'Failed to update authority');
+    } finally {
+      setAuthActionLoading(false);
+    }
+  };
+
+  const handleDeleteAuthority = async (auth: any) => {
+    if (!confirm(`Are you sure you want to delete authority "${auth.name}"? This action cannot be undone.`)) return;
+    try {
+      await api.delete(`/admin/authorities/${auth.id}`);
+      await loadAllData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete authority');
+    }
+  };
+
+  const handleToggleAuthorityAccepting = async (auth: any) => {
+    try {
+      await api.patch(`/admin/authorities/${auth.id}`, {
+        isAcceptingAppointments: !auth.isAcceptingAppointments
+      });
+      await loadAllData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to toggle appointment status');
+    }
+  };
+
+  // Background Media Handlers
+  const handleBackgroundVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 50 * 1024 * 1024) {
+      alert('Video file size exceeds 50MB. Please select a smaller video or enter an online MP4 URL.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSettingsForm((prev: any) => ({
+        ...prev,
+        backgroundType: 'video',
+        backgroundVideoUrl: reader.result as string
+      }));
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleBackgroundImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSettingsForm((prev: any) => ({
+        ...prev,
+        backgroundType: 'image',
+        backgroundImageUrl: reader.result as string
+      }));
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   // College Info CRUD
@@ -1306,23 +1573,264 @@ export const AdminDashboard: React.FC = () => {
 
           {/* List of Authorities */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">Active Authorities ({authorities.length})</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Active Authorities ({authorities.length})</h3>
+              <span className="text-[11px] text-slate-400">Click "Edit" to modify details or reset password</span>
+            </div>
+
             <div className="grid grid-cols-1 gap-3">
-              {authorities.map(a => (
-                <div key={a.id} className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-between text-xs">
-                  <div>
-                    <h4 className="font-bold text-sm text-slate-900 dark:text-white">{a.name}</h4>
-                    <p className="text-slate-500">{a.designation} • {a.department?.name} • {a.officeLocation}</p>
+              {authorities.map((a) => (
+                <div
+                  key={a.id}
+                  className="p-4 bg-slate-50 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs hover:border-blue-300 dark:hover:border-blue-700 transition"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="font-bold text-sm text-slate-900 dark:text-white">{a.name}</h4>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
+                        {a.designation}
+                      </span>
+                    </div>
+                    <p className="text-slate-500 dark:text-slate-400 text-[11px]">
+                      🏢 {a.department?.name || 'Department Head'} • 📍 {a.officeLocation || 'Main Office'} {a.email && `• ✉️ ${a.email}`} {a.mobile && `• 📞 ${a.mobile}`}
+                    </p>
                   </div>
-                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                    a.isAcceptingAppointments ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'
-                  }`}>
-                    {a.isAcceptingAppointments ? 'Accepting' : 'Paused'}
-                  </span>
+
+                  <div className="flex items-center gap-2 self-end sm:self-auto flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleAuthorityAccepting(a)}
+                      className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition flex items-center gap-1 ${
+                        a.isAcceptingAppointments
+                          ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-200'
+                          : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300'
+                      }`}
+                      title="Click to toggle appointment acceptance"
+                    >
+                      <span className={`w-2 h-2 rounded-full ${a.isAcceptingAppointments ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+                      <span>{a.isAcceptingAppointments ? 'Accepting Visits' : 'Visits Paused'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEditAuthority(a)}
+                      className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100 rounded-xl font-bold flex items-center gap-1 transition"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                      <span>Edit</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteAuthority(a)}
+                      className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition"
+                      title="Delete Authority"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
+
+          {/* EDIT AUTHORITY MODAL */}
+          {showEditAuthModal && editingAuth && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-xl w-full shadow-2xl space-y-4 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl">
+                      <Edit2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-900 dark:text-white text-sm">
+                        Edit Authority Profile & Settings
+                      </h3>
+                      <p className="text-[11px] text-slate-400">
+                        Update name, designation, department, office location, or reset password.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowEditAuthModal(false)}
+                    className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {authActionError && (
+                  <div className="p-3 bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs rounded-xl">
+                    {authActionError}
+                  </div>
+                )}
+
+                {authActionSuccess && (
+                  <div className="p-3 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300 text-xs rounded-xl flex items-center gap-2">
+                    <Check className="w-4 h-4" />
+                    <span>{authActionSuccess}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleSaveEditAuthority} className="space-y-3.5 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Full Name *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={editAuthForm.name}
+                        onChange={(e) => setEditAuthForm({ ...editAuthForm, name: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Designation *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={editAuthForm.designation}
+                        onChange={(e) => setEditAuthForm({ ...editAuthForm, designation: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Department *
+                      </label>
+                      <select
+                        required
+                        value={editAuthForm.departmentId}
+                        onChange={(e) => setEditAuthForm({ ...editAuthForm, departmentId: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      >
+                        {departments.map((d) => (
+                          <option key={d.id} value={d.id}>
+                            {d.name} ({d.code})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Office Location *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={editAuthForm.officeLocation}
+                        onChange={(e) => setEditAuthForm({ ...editAuthForm, officeLocation: e.target.value })}
+                        placeholder="e.g. Room 204, Academic Block"
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Contact Email
+                      </label>
+                      <input
+                        type="email"
+                        value={editAuthForm.email}
+                        onChange={(e) => setEditAuthForm({ ...editAuthForm, email: e.target.value })}
+                        placeholder="e.g. faculty@college.edu"
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Mobile Number
+                      </label>
+                      <input
+                        type="tel"
+                        value={editAuthForm.mobile}
+                        onChange={(e) => setEditAuthForm({ ...editAuthForm, mobile: e.target.value })}
+                        placeholder="e.g. +91 98765 43210"
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Bio / Short Note
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={editAuthForm.bio}
+                      onChange={(e) => setEditAuthForm({ ...editAuthForm, bio: e.target.value })}
+                      placeholder="Brief research domain or appointment instructions..."
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl space-y-2">
+                    <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-800 dark:text-slate-200">
+                      <input
+                        type="checkbox"
+                        checked={editAuthForm.isAcceptingAppointments}
+                        onChange={(e) => setEditAuthForm({ ...editAuthForm, isAcceptingAppointments: e.target.checked })}
+                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                      />
+                      <span>Accepting Visitor Appointments</span>
+                    </label>
+                    <p className="text-[10px] text-slate-400 ml-6">
+                      Uncheck this to temporarily pause incoming appointment requests on the visitor kiosk.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Reset Password (Optional)
+                    </label>
+                    <input
+                      type="password"
+                      value={editAuthForm.password}
+                      onChange={(e) => setEditAuthForm({ ...editAuthForm, password: e.target.value })}
+                      placeholder="Leave blank to keep existing password unchanged"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setShowEditAuthModal(false)}
+                      className="px-4 py-2 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-semibold"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={authActionLoading}
+                      className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md flex items-center gap-2 transition disabled:opacity-50"
+                    >
+                      {authActionLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Saving Profile...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4" />
+                          <span>Save Changes</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1368,24 +1876,174 @@ export const AdminDashboard: React.FC = () => {
           </form>
 
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-3">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">Existing Departments</h3>
-            <div className="grid grid-cols-1 gap-2">
-              {departments.map(d => (
-                <div key={d.id} className="p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-between text-xs">
-                  <div>
-                    <strong className="text-slate-900 dark:text-white">{d.name} ({d.code})</strong>
-                    <p className="text-slate-400">{d.officeLocation || 'Main Block'}</p>
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Existing Departments ({departments.length})</h3>
+              <span className="text-[11px] text-slate-400">Click "Edit" to modify department details</span>
+            </div>
+
+            <div className="grid grid-cols-1 gap-2.5">
+              {departments.map((d) => (
+                <div
+                  key={d.id}
+                  className="p-3.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 rounded-2xl flex items-center justify-between text-xs hover:border-blue-300 dark:hover:border-blue-700 transition"
+                >
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <strong className="text-slate-900 dark:text-white text-sm">{d.name}</strong>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200">
+                        {d.code}
+                      </span>
+                    </div>
+                    <p className="text-slate-500 dark:text-slate-400 text-[11px]">
+                      📍 {d.officeLocation || 'Main Block'} {d.description && `• ${d.description}`}
+                    </p>
                   </div>
-                  <button
-                    onClick={() => handleDeleteDept(d.id)}
-                    className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEditDept(d)}
+                      className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100 rounded-xl font-bold flex items-center gap-1 transition"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteDept(d.id)}
+                      className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition"
+                      title="Delete Department"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
+
+          {/* EDIT DEPARTMENT MODAL */}
+          {showEditDeptModal && editingDept && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-in zoom-in-95">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl">
+                      <Edit2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-900 dark:text-white text-sm">
+                        Edit Department
+                      </h3>
+                      <p className="text-[11px] text-slate-400">
+                        Update department name, code, or office location.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowEditDeptModal(false)}
+                    className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {deptActionError && (
+                  <div className="p-3 bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs rounded-xl">
+                    {deptActionError}
+                  </div>
+                )}
+
+                {deptActionSuccess && (
+                  <div className="p-3 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300 text-xs rounded-xl flex items-center gap-2">
+                    <Check className="w-4 h-4" />
+                    <span>{deptActionSuccess}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleSaveEditDept} className="space-y-3 text-xs">
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Department Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editDeptForm.name}
+                      onChange={(e) => setEditDeptForm({ ...editDeptForm, name: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Department Code *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editDeptForm.code}
+                      onChange={(e) => setEditDeptForm({ ...editDeptForm, code: e.target.value.toUpperCase() })}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono uppercase"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Office Location
+                    </label>
+                    <input
+                      type="text"
+                      value={editDeptForm.officeLocation}
+                      onChange={(e) => setEditDeptForm({ ...editDeptForm, officeLocation: e.target.value })}
+                      placeholder="e.g. Science Block, 2nd Floor"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Description / Notes
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={editDeptForm.description}
+                      onChange={(e) => setEditDeptForm({ ...editDeptForm, description: e.target.value })}
+                      placeholder="Specializations, lab details, or visiting guidelines..."
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setShowEditDeptModal(false)}
+                      className="px-4 py-2 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-semibold"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={deptActionLoading}
+                      className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md flex items-center gap-2 transition disabled:opacity-50"
+                    >
+                      {deptActionLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Saving...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4" />
+                          <span>Save Changes</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1727,6 +2385,39 @@ export const AdminDashboard: React.FC = () => {
                     </p>
                   </div>
 
+                  {/* Welcome Greeting & Hero Badge Customization */}
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Hero Welcome Heading
+                    </label>
+                    <input
+                      type="text"
+                      value={settingsForm.welcomeHeading || ''}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, welcomeHeading: e.target.value })}
+                      placeholder="e.g. Welcome to or नमस्ते / स्वागत है"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Greeting prefix displayed directly above the college name.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Hero Pill Badge Text
+                    </label>
+                    <input
+                      type="text"
+                      value={settingsForm.heroBadgeText || ''}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, heroBadgeText: e.target.value })}
+                      placeholder="e.g. Digital Reception Kiosk or AI Smart Campus"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Glowing pill tag shown at the top of the kiosk banner.
+                    </p>
+                  </div>
+
                   {/* Site Logo Section with Direct Upload & Live Preview */}
                   <div className="sm:col-span-2 space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
                     <div className="flex items-center justify-between">
@@ -1808,14 +2499,546 @@ export const AdminDashboard: React.FC = () => {
                             type="text"
                             value={settingsForm.siteLogoUrl || ''}
                             onChange={(e) => setSettingsForm({ ...settingsForm, siteLogoUrl: e.target.value, logoUrl: e.target.value })}
-                            placeholder="e.g. /uploads/logos/logo.png or https://example.com/logo.svg"
+                            placeholder="e.g. logo.png or /uploads/logos/logo.png"
                             className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 focus:outline-none"
                           />
                         </div>
 
                         <p className="text-[11px] text-slate-400">
-                          Recommended: 512×512px or horizontal transparent SVG / PNG. Max file size: 5MB. Files are saved securely on the server and served instantly.
+                          Recommended: 512×512px transparent PNG / SVG. Max file size: 5MB.
                         </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* COLOR SCHEME & THEME CUSTOMIZATION */}
+                  <div className="sm:col-span-2 space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <div>
+                      <h4 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                        <Palette className="w-4 h-4 text-blue-600" />
+                        <span>Website Theme Colors & Brand Palette</span>
+                      </h4>
+                      <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">
+                        Choose primary brand color and secondary accent. Applies across buttons, banners, badges, and kiosk elements.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      {/* Primary Color */}
+                      <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-3">
+                        <label className="block font-bold text-slate-800 dark:text-slate-200 text-xs">
+                          Primary Brand Theme Color
+                        </label>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="color"
+                            value={settingsForm.themeColor || '#1e3a8a'}
+                            onChange={(e) => setSettingsForm({ ...settingsForm, themeColor: e.target.value })}
+                            className="w-10 h-10 rounded-xl cursor-pointer border-0 bg-transparent"
+                          />
+                          <input
+                            type="text"
+                            value={settingsForm.themeColor || '#1e3a8a'}
+                            onChange={(e) => setSettingsForm({ ...settingsForm, themeColor: e.target.value })}
+                            className="w-28 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-mono uppercase"
+                          />
+                        </div>
+
+                        <div className="space-y-1.5 pt-1">
+                          <span className="text-[10px] text-slate-400 font-semibold block">Quick Color Presets:</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {THEME_COLOR_PRESETS.map((preset) => (
+                              <button
+                                key={preset.hex}
+                                type="button"
+                                onClick={() => setSettingsForm({ ...settingsForm, themeColor: preset.hex })}
+                                className="px-2 py-1 rounded-lg text-[10px] font-semibold border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 hover:scale-105 transition"
+                              >
+                                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: preset.hex }} />
+                                <span>{preset.name}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Secondary Accent Color */}
+                      <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-3">
+                        <label className="block font-bold text-slate-800 dark:text-slate-200 text-xs">
+                          Secondary Accent Color
+                        </label>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="color"
+                            value={settingsForm.secondaryColor || '#3b82f6'}
+                            onChange={(e) => setSettingsForm({ ...settingsForm, secondaryColor: e.target.value })}
+                            className="w-10 h-10 rounded-xl cursor-pointer border-0 bg-transparent"
+                          />
+                          <input
+                            type="text"
+                            value={settingsForm.secondaryColor || '#3b82f6'}
+                            onChange={(e) => setSettingsForm({ ...settingsForm, secondaryColor: e.target.value })}
+                            className="w-28 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-mono uppercase"
+                          />
+                        </div>
+
+                        <div className="space-y-1.5 pt-1">
+                          <span className="text-[10px] text-slate-400 font-semibold block">Quick Accent Presets:</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {SECONDARY_COLOR_PRESETS.map((preset) => (
+                              <button
+                                key={preset.hex}
+                                type="button"
+                                onClick={() => setSettingsForm({ ...settingsForm, secondaryColor: preset.hex })}
+                                className="px-2 py-1 rounded-lg text-[10px] font-semibold border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 hover:scale-105 transition"
+                              >
+                                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: preset.hex }} />
+                                <span>{preset.name}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* FULL WEBSITE BACKGROUND CUSTOMIZATION STUDIO (WITH VIDEO LOOP SUPPORT) */}
+                  <div className="sm:col-span-2 space-y-5 pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <h4 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                          <Video className="w-5 h-5 text-indigo-600" />
+                          <span>Website Background Studio (Video, Wallpaper, Gradient, or Color)</span>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm">
+                            Dynamic Full Customization
+                          </span>
+                        </h4>
+                        <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">
+                          Set a live looping ambient video, high-resolution wallpaper, cyber gradient, or solid color for the visitor kiosk and public portal.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Mode Selector Tabs */}
+                    <div className="flex flex-wrap gap-2 p-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-2xl">
+                      {[
+                        { id: 'default', label: 'Default Theme', icon: Landmark, desc: 'Clean slate look' },
+                        { id: 'video', label: '🎥 Looping Video', icon: Video, desc: 'Ambient MP4 video loop' },
+                        { id: 'image', label: '🖼️ Image Wallpaper', icon: ImageIcon, desc: 'Custom photo background' },
+                        { id: 'gradient', label: '✨ Modern Gradient', icon: Sparkles, desc: 'Dynamic CSS gradient' },
+                        { id: 'color', label: '🎨 Solid Color', icon: Palette, desc: 'Custom background color' }
+                      ].map((mode) => (
+                        <button
+                          key={mode.id}
+                          type="button"
+                          onClick={() => setSettingsForm({ ...settingsForm, backgroundType: mode.id })}
+                          className={`flex-1 min-w-[130px] px-3.5 py-2.5 rounded-xl font-bold text-xs transition flex flex-col items-center gap-0.5 text-center ${
+                            (settingsForm.backgroundType || 'default') === mode.id
+                              ? 'bg-blue-600 text-white shadow-md'
+                              : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700/60'
+                          }`}
+                        >
+                          <span className="font-bold">{mode.label}</span>
+                          <span className={`text-[10px] ${
+                            (settingsForm.backgroundType || 'default') === mode.id ? 'text-blue-200' : 'text-slate-400'
+                          }`}>
+                            {mode.desc}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Background Mode Content Controls */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                      {/* Left: Controls for active background mode */}
+                      <div className="lg:col-span-7 space-y-4">
+                        {/* MODE: VIDEO */}
+                        {settingsForm.backgroundType === 'video' && (
+                          <div className="p-4 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900/50 rounded-2xl space-y-4">
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                                <Video className="w-4 h-4 text-indigo-600" />
+                                <span>Background Video Settings (MP4 / WebM)</span>
+                              </span>
+                              <span className="text-[10px] bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold px-2 py-0.5 rounded-full">
+                                Auto-loops Muted
+                              </span>
+                            </div>
+
+                            {/* Presets */}
+                            <div className="space-y-1.5">
+                              <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block">
+                                1-Click Curated Royalty-Free Video Loops:
+                              </span>
+                              <div className="grid grid-cols-2 gap-2">
+                                {BACKGROUND_VIDEO_PRESETS.map((v) => {
+                                  const isSelected = settingsForm.backgroundVideoUrl === v.url;
+                                  return (
+                                    <button
+                                      key={v.id}
+                                      type="button"
+                                      onClick={() => setSettingsForm({ ...settingsForm, backgroundVideoUrl: v.url })}
+                                      className={`p-2.5 rounded-xl border text-left flex items-center justify-between transition ${
+                                        isSelected
+                                          ? 'border-indigo-600 bg-indigo-100/70 dark:bg-indigo-900/50 text-indigo-900 dark:text-indigo-200 ring-2 ring-indigo-500/30 font-bold'
+                                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-50'
+                                      }`}
+                                    >
+                                      <div>
+                                        <p className="text-xs font-semibold">{v.name}</p>
+                                        <span className="text-[10px] text-slate-400">{v.badge}</span>
+                                      </div>
+                                      {isSelected && <Check className="w-4 h-4 text-indigo-600 shrink-0" />}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            {/* Direct URL & Upload */}
+                            <div className="space-y-2 pt-1 border-t border-indigo-100 dark:border-indigo-900/40">
+                              <label className="block text-slate-700 dark:text-slate-300 text-[11px] font-bold">
+                                Or Enter Direct Video URL (MP4 / WebM):
+                              </label>
+                              <input
+                                type="text"
+                                value={settingsForm.backgroundVideoUrl || ''}
+                                onChange={(e) => setSettingsForm({ ...settingsForm, backgroundVideoUrl: e.target.value })}
+                                placeholder="https://example.com/ambient-campus.mp4"
+                                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-indigo-600 focus:outline-none"
+                              />
+
+                              <div className="flex items-center gap-2 pt-1">
+                                <label className="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-sm">
+                                  <Upload className="w-3.5 h-3.5" />
+                                  <span>Upload Local Video File (MP4)</span>
+                                  <input
+                                    type="file"
+                                    accept="video/mp4,video/webm"
+                                    onChange={handleBackgroundVideoUpload}
+                                    className="hidden"
+                                  />
+                                </label>
+                                <span className="text-[10px] text-slate-400">Max recommended: 30MB</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* MODE: IMAGE */}
+                        {settingsForm.backgroundType === 'image' && (
+                          <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-4">
+                            <span className="font-bold text-xs text-slate-800 dark:text-slate-200 block">
+                              Custom Image Wallpaper Settings
+                            </span>
+
+                            <div className="space-y-1.5">
+                              <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block">
+                                Curated Campus Wallpaper Presets:
+                              </span>
+                              <div className="grid grid-cols-2 gap-2">
+                                {BACKGROUND_IMAGE_PRESETS.map((img, idx) => (
+                                  <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => setSettingsForm({ ...settingsForm, backgroundImageUrl: img.url })}
+                                    className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex items-center gap-2 text-left hover:scale-105 transition overflow-hidden"
+                                  >
+                                    <img src={img.url} alt={img.name} className="w-10 h-8 rounded-lg object-cover" />
+                                    <span className="text-xs font-semibold truncate">{img.name}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="space-y-2 pt-1 border-t border-slate-200 dark:border-slate-700">
+                              <label className="block text-slate-700 dark:text-slate-300 text-[11px] font-bold">
+                                Or Enter Image URL / File Path:
+                              </label>
+                              <input
+                                type="text"
+                                value={settingsForm.backgroundImageUrl || ''}
+                                onChange={(e) => setSettingsForm({ ...settingsForm, backgroundImageUrl: e.target.value })}
+                                placeholder="https://example.com/wallpaper.jpg"
+                                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                              />
+
+                              <div className="flex items-center gap-2 pt-1">
+                                <label className="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-sm">
+                                  <Upload className="w-3.5 h-3.5" />
+                                  <span>Upload Wallpaper Image</span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleBackgroundImageUpload}
+                                    className="hidden"
+                                  />
+                                </label>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* MODE: GRADIENT */}
+                        {settingsForm.backgroundType === 'gradient' && (
+                          <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-4">
+                            <span className="font-bold text-xs text-slate-800 dark:text-slate-200 block">
+                              Modern Gradient Presets (1-Click Select)
+                            </span>
+
+                            <div className="grid grid-cols-2 gap-2">
+                              {BACKGROUND_GRADIENT_PRESETS.map((grad, idx) => (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => setSettingsForm({ ...settingsForm, backgroundGradient: grad.css })}
+                                  className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 text-left flex items-center gap-2 text-white font-bold text-xs shadow hover:scale-105 transition"
+                                  style={{ background: grad.css }}
+                                >
+                                  <span>{grad.name}</span>
+                                </button>
+                              ))}
+                            </div>
+
+                            <div>
+                              <label className="block text-slate-700 dark:text-slate-300 text-[11px] font-bold mb-1">
+                                Custom CSS Linear Gradient:
+                              </label>
+                              <input
+                                type="text"
+                                value={settingsForm.backgroundGradient || ''}
+                                onChange={(e) => setSettingsForm({ ...settingsForm, backgroundGradient: e.target.value })}
+                                placeholder="linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)"
+                                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* MODE: SOLID COLOR */}
+                        {settingsForm.backgroundType === 'color' && (
+                          <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-3">
+                            <span className="font-bold text-xs text-slate-800 dark:text-slate-200 block">
+                              Custom Solid Background Color
+                            </span>
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="color"
+                                value={settingsForm.backgroundColor || '#0f172a'}
+                                onChange={(e) => setSettingsForm({ ...settingsForm, backgroundColor: e.target.value })}
+                                className="w-12 h-12 rounded-xl cursor-pointer border-0 bg-transparent"
+                              />
+                              <input
+                                type="text"
+                                value={settingsForm.backgroundColor || '#0f172a'}
+                                onChange={(e) => setSettingsForm({ ...settingsForm, backgroundColor: e.target.value })}
+                                className="w-32 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono uppercase"
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Common Sliders: Overlay Opacity & Blur for Video/Image */}
+                        {(settingsForm.backgroundType === 'video' || settingsForm.backgroundType === 'image') && (
+                          <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-4">
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                                <Sliders className="w-4 h-4 text-blue-600" />
+                                <span>Readability & Visual Atmosphere Controls</span>
+                              </span>
+                              <span className="text-[10px] text-slate-400">Keeps kiosk text easily readable</span>
+                            </div>
+
+                            <div className="space-y-3">
+                              <div>
+                                <div className="flex justify-between text-xs font-semibold mb-1">
+                                  <span>Dark Overlay Opacity:</span>
+                                  <span className="font-mono text-blue-600 dark:text-blue-400">
+                                    {settingsForm.backgroundOverlayOpacity ?? 60}%
+                                  </span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min="0"
+                                  max="100"
+                                  step="5"
+                                  value={settingsForm.backgroundOverlayOpacity ?? 60}
+                                  onChange={(e) =>
+                                    setSettingsForm({ ...settingsForm, backgroundOverlayOpacity: Number(e.target.value) })
+                                  }
+                                  className="w-full accent-blue-600 cursor-pointer"
+                                />
+                                <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">
+                                  <span>0% (Raw Media)</span>
+                                  <span>60% (Recommended)</span>
+                                  <span>100% (Solid Black)</span>
+                                </div>
+                              </div>
+
+                              <div>
+                                <div className="flex justify-between text-xs font-semibold mb-1">
+                                  <span>Background Blur Filter:</span>
+                                  <span className="font-mono text-blue-600 dark:text-blue-400">
+                                    {settingsForm.backgroundBlur ?? 0}px
+                                  </span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min="0"
+                                  max="20"
+                                  step="1"
+                                  value={settingsForm.backgroundBlur ?? 0}
+                                  onChange={(e) =>
+                                    setSettingsForm({ ...settingsForm, backgroundBlur: Number(e.target.value) })
+                                  }
+                                  className="w-full accent-blue-600 cursor-pointer"
+                                />
+                                <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">
+                                  <span>0px (Crisp)</span>
+                                  <span>5px (Soft Focus)</span>
+                                  <span>20px (Deep Blur)</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Right: Real-Time Interactive Miniature Kiosk Simulator */}
+                      <div className="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-3xl p-4 shadow-xl text-white flex flex-col items-center">
+                        <div className="w-full flex items-center justify-between mb-2.5 pb-2 border-b border-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                          <span>Live Kiosk Simulator</span>
+                          <span className="text-emerald-400 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                            Live Preview
+                          </span>
+                        </div>
+
+                        {/* Interactive Screen Frame */}
+                        <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl border border-slate-700/80 flex flex-col justify-between p-4 bg-slate-950">
+                          {/* Background Media inside frame */}
+                          {settingsForm.backgroundType === 'video' && settingsForm.backgroundVideoUrl && (
+                            <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
+                              <video
+                                key={settingsForm.backgroundVideoUrl}
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                                src={resolveAssetUrl(settingsForm.backgroundVideoUrl)}
+                                className="w-full h-full object-cover"
+                                style={{
+                                  filter: settingsForm.backgroundBlur ? `blur(${settingsForm.backgroundBlur}px)` : undefined,
+                                  transform: settingsForm.backgroundBlur ? 'scale(1.08)' : undefined
+                                }}
+                              />
+                              <div
+                                className="absolute inset-0 bg-slate-950"
+                                style={{ opacity: (settingsForm.backgroundOverlayOpacity ?? 60) / 100 }}
+                              />
+                            </div>
+                          )}
+
+                          {settingsForm.backgroundType === 'image' && settingsForm.backgroundImageUrl && (
+                            <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
+                              <div
+                                className="w-full h-full bg-cover bg-center"
+                                style={{
+                                  backgroundImage: `url("${resolveAssetUrl(settingsForm.backgroundImageUrl)}")`,
+                                  filter: settingsForm.backgroundBlur ? `blur(${settingsForm.backgroundBlur}px)` : undefined,
+                                  transform: settingsForm.backgroundBlur ? 'scale(1.08)' : undefined
+                                }}
+                              />
+                              <div
+                                className="absolute inset-0 bg-slate-950"
+                                style={{ opacity: (settingsForm.backgroundOverlayOpacity ?? 60) / 100 }}
+                              />
+                            </div>
+                          )}
+
+                          {settingsForm.backgroundType === 'gradient' && (
+                            <div
+                              className="absolute inset-0 pointer-events-none -z-10"
+                              style={{ background: settingsForm.backgroundGradient }}
+                            />
+                          )}
+
+                          {settingsForm.backgroundType === 'color' && (
+                            <div
+                              className="absolute inset-0 pointer-events-none -z-10"
+                              style={{ backgroundColor: settingsForm.backgroundColor }}
+                            />
+                          )}
+
+                          {/* Kiosk Header bar */}
+                          <div className="flex items-center justify-between text-[10px] bg-slate-900/70 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 w-full">
+                            <div className="flex items-center gap-1.5 truncate">
+                              <img
+                                src={resolveAssetUrl(settingsForm.siteLogoUrl || 'logo.png')}
+                                alt="Emblem"
+                                className="w-4 h-4 rounded-full object-cover border border-white/20 shrink-0"
+                              />
+                              <span className="font-bold truncate text-[9px]">
+                                {settingsForm.siteName || 'College Kiosk'}
+                              </span>
+                            </div>
+                            <span className="text-[8px] text-slate-300 font-mono">10:00 AM</span>
+                          </div>
+
+                          {/* Kiosk Hero Center Card */}
+                          <div className="my-auto text-center space-y-1.5 bg-slate-900/70 backdrop-blur-md p-3.5 rounded-2xl border border-white/10 shadow-lg max-w-[90%] mx-auto">
+                            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 text-[8px] font-bold">
+                              <Sparkles className="w-2.5 h-2.5" />
+                              <span>{settingsForm.heroBadgeText || 'Digital Reception Kiosk'}</span>
+                            </div>
+
+                            <h5 className="text-xs font-black leading-tight">
+                              <span className="text-slate-200">
+                                {settingsForm.welcomeHeading || 'Welcome to'}{' '}
+                              </span>
+                              <span
+                                className="text-transparent bg-clip-text"
+                                style={{
+                                  backgroundImage: `linear-gradient(to right, ${settingsForm.secondaryColor || '#3b82f6'}, #93c5fd)`
+                                }}
+                              >
+                                {settingsForm.siteName || 'RAVAN College'}
+                              </span>
+                            </h5>
+
+                            <p className="text-[9px] text-slate-300 line-clamp-1">
+                              {settingsForm.tagline || 'AI Visitor Management'}
+                            </p>
+
+                            <div className="pt-1 flex items-center justify-center gap-2">
+                              <span
+                                className="px-2.5 py-1 text-[8px] font-bold text-white rounded-lg shadow"
+                                style={{ backgroundColor: settingsForm.themeColor || '#1e3a8a' }}
+                              >
+                                Track Status
+                              </span>
+                              <span className="px-2.5 py-1 text-[8px] font-bold bg-white/10 text-white rounded-lg border border-white/20">
+                                Meet Authority
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Kiosk Action row preview */}
+                          <div className="grid grid-cols-3 gap-1.5 w-full">
+                            {['Book Visit', 'Departments', 'Ask AI'].map((lbl, i) => (
+                              <div
+                                key={i}
+                                className="p-1.5 bg-slate-900/70 backdrop-blur-md rounded-xl border border-white/10 text-center text-[8px] font-bold text-slate-200"
+                              >
+                                {lbl}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <span className="text-[10px] text-slate-400 mt-3 text-center">
+                          Simulated live view. Real background video and frosted glass effects will render across all pages.
+                        </span>
                       </div>
                     </div>
                   </div>

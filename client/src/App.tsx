@@ -7,6 +7,7 @@ import { SettingsProvider, useSettings } from './context/SettingsContext';
 
 import { Navbar } from './components/Navbar';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
+import { GlobalBackground } from './components/GlobalBackground';
 
 import { VisitorHome } from './pages/visitor/VisitorHome';
 import { MeetAuthority } from './pages/visitor/MeetAuthority';
@@ -120,6 +121,80 @@ const DynamicFooter: React.FC = () => {
   );
 };
 
+const AppShell: React.FC = () => {
+  const { settings } = useSettings();
+  const hasCustomBg = settings.backgroundType && settings.backgroundType !== 'default';
+
+  return (
+    <div
+      className={`min-h-screen flex flex-col transition-colors ${
+        hasCustomBg
+          ? 'bg-transparent text-slate-900 dark:text-slate-100'
+          : 'bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100'
+      }`}
+    >
+      <GlobalBackground />
+      <Navbar />
+      <RealTimeNotificationBanner />
+
+      <main className="flex-1">
+        <Routes>
+          {/* Visitor Kiosk & Public Interfaces */}
+          <Route path="/" element={<VisitorHome />} />
+          <Route path="/authorities" element={<MeetAuthority />} />
+          <Route path="/book/:authorityId" element={<BookAppointment />} />
+          <Route path="/track" element={<TrackAppointment />} />
+          <Route path="/departments" element={<DepartmentsList />} />
+          <Route path="/college-info" element={<CollegeInfo />} />
+          <Route path="/campus-map" element={<CampusMapPage />} />
+          <Route path="/announcements" element={<AnnouncementsPage />} />
+
+          {/* Authority Portal */}
+          <Route path="/authority/login" element={<AuthorityLogin />} />
+          <Route
+            path="/authority/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['AUTHORITY', 'COLLEGE_ADMIN', 'SUPER_ADMIN']}>
+                <AuthorityDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Reception Desk */}
+          <Route
+            path="/reception"
+            element={
+              <ProtectedRoute allowedRoles={['RECEPTION', 'COLLEGE_ADMIN', 'SUPER_ADMIN']}>
+                <ReceptionDesk />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* College Admin Dashboard */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute allowedRoles={['COLLEGE_ADMIN', 'SUPER_ADMIN']}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
+
+      {/* Dynamic Configured Footer */}
+      <DynamicFooter />
+
+      {/* Progressive Web App prompt */}
+      <PWAInstallPrompt />
+    </div>
+  );
+};
+
 export const App: React.FC = () => {
   return (
     <LanguageProvider>
@@ -127,65 +202,7 @@ export const App: React.FC = () => {
         <SocketProvider>
           <SettingsProvider>
             <Router basename={import.meta.env.BASE_URL.replace(/\/$/, '') || '/'}>
-              <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 transition-colors">
-                <Navbar />
-                <RealTimeNotificationBanner />
-
-                <main className="flex-1">
-                  <Routes>
-                    {/* Visitor Kiosk & Public Interfaces */}
-                    <Route path="/" element={<VisitorHome />} />
-                    <Route path="/authorities" element={<MeetAuthority />} />
-                    <Route path="/book/:authorityId" element={<BookAppointment />} />
-                    <Route path="/track" element={<TrackAppointment />} />
-                    <Route path="/departments" element={<DepartmentsList />} />
-                    <Route path="/college-info" element={<CollegeInfo />} />
-                    <Route path="/campus-map" element={<CampusMapPage />} />
-                    <Route path="/announcements" element={<AnnouncementsPage />} />
-
-                    {/* Authority Portal */}
-                    <Route path="/authority/login" element={<AuthorityLogin />} />
-                    <Route
-                      path="/authority/dashboard"
-                      element={
-                        <ProtectedRoute allowedRoles={['AUTHORITY', 'COLLEGE_ADMIN', 'SUPER_ADMIN']}>
-                          <AuthorityDashboard />
-                        </ProtectedRoute>
-                      }
-                    />
-
-                    {/* Reception Desk */}
-                    <Route
-                      path="/reception"
-                      element={
-                        <ProtectedRoute allowedRoles={['RECEPTION', 'COLLEGE_ADMIN', 'SUPER_ADMIN']}>
-                          <ReceptionDesk />
-                        </ProtectedRoute>
-                      }
-                    />
-
-                    {/* College Admin Dashboard */}
-                    <Route path="/admin/login" element={<AdminLogin />} />
-                    <Route
-                      path="/admin"
-                      element={
-                        <ProtectedRoute allowedRoles={['COLLEGE_ADMIN', 'SUPER_ADMIN']}>
-                          <AdminDashboard />
-                        </ProtectedRoute>
-                      }
-                    />
-
-                    {/* Fallback */}
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
-                </main>
-
-                {/* Dynamic Configured Footer */}
-                <DynamicFooter />
-
-                {/* Progressive Web App prompt */}
-                <PWAInstallPrompt />
-              </div>
+              <AppShell />
             </Router>
           </SettingsProvider>
         </SocketProvider>

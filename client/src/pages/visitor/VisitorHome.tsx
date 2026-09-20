@@ -137,10 +137,16 @@ export const VisitorHome: React.FC = () => {
 
   const receptionActions = allReceptionActions.filter((a) => a.visible);
 
+  const hasCustomBg = settings.backgroundType && settings.backgroundType !== 'default';
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
       {/* Welcome Hero Banner */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white rounded-3xl p-8 sm:p-12 shadow-2xl border border-blue-900/40 text-center space-y-4">
+      <div className={`relative overflow-hidden text-white rounded-3xl p-8 sm:p-12 shadow-2xl border text-center space-y-4 transition-all ${
+        hasCustomBg
+          ? 'bg-gradient-to-br from-slate-950/85 via-blue-950/75 to-slate-950/85 backdrop-blur-xl border-white/20'
+          : 'bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 border-blue-900/40'
+      }`}>
         {/* Logo Avatar Badge */}
         <div className="flex justify-center mb-1">
           <div className="relative group">
@@ -157,11 +163,11 @@ export const VisitorHome: React.FC = () => {
         </div>
 
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 text-xs font-bold uppercase tracking-wider backdrop-blur-md">
-          <Sparkles className="w-3.5 h-3.5" /> Digital Reception Kiosk
+          <Sparkles className="w-3.5 h-3.5" /> {settings.heroBadgeText || 'Digital Reception Kiosk'}
         </div>
 
         <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight">
-          {t('welcome', 'Welcome to')}{' '}
+          {settings.welcomeHeading ? settings.welcomeHeading : t('welcome', 'Welcome to')}{' '}
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300">
             {settings.collegeName}
           </span>
@@ -192,8 +198,12 @@ export const VisitorHome: React.FC = () => {
       {/* 7 Touch Actions Grid */}
       <div>
         <div className="text-left mb-4">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">College Reception Services</h2>
-          <p className="text-xs text-slate-500">Touch any option below for assistance or booking.</p>
+          <h2 className={`text-xl font-bold ${hasCustomBg ? 'text-white drop-shadow' : 'text-slate-900 dark:text-white'}`}>
+            College Reception Services
+          </h2>
+          <p className={`text-xs ${hasCustomBg ? 'text-slate-300' : 'text-slate-500'}`}>
+            Touch any option below for assistance or booking.
+          </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -203,23 +213,27 @@ export const VisitorHome: React.FC = () => {
               <Link
                 key={idx}
                 to={action.to}
-                className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 text-left flex flex-col justify-between overflow-hidden"
+                className={`group relative border rounded-3xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 text-left flex flex-col justify-between overflow-hidden ${
+                  hasCustomBg
+                    ? 'bg-slate-900/75 backdrop-blur-md border-white/15 hover:bg-slate-900/90 text-white'
+                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'
+                }`}
               >
                 <div className="space-y-4">
                   <div className={`w-14 h-14 rounded-2xl bg-gradient-to-tr ${action.color} text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
                     <Icon className="w-7 h-7" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">
+                    <h3 className={`text-base font-bold transition-colors ${hasCustomBg ? 'text-white group-hover:text-blue-300' : 'text-slate-900 dark:text-white group-hover:text-blue-600'}`}>
                       {action.title}
                     </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
+                    <p className={`text-xs mt-1 line-clamp-2 ${hasCustomBg ? 'text-slate-300' : 'text-slate-500 dark:text-slate-400'}`}>
                       {action.description}
                     </p>
                   </div>
                 </div>
 
-                <div className="mt-5 flex items-center justify-between text-xs font-semibold text-blue-600 dark:text-blue-400">
+                <div className="mt-5 flex items-center justify-between text-xs font-semibold text-blue-400">
                   <span>Explore</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </div>
@@ -231,7 +245,11 @@ export const VisitorHome: React.FC = () => {
 
       {/* Grounded Gemini AI Receptionist Interactive Box */}
       {settings.enableAIAssistant !== false && (
-        <div className="bg-gradient-to-r from-blue-900/10 via-indigo-900/10 to-blue-900/10 dark:bg-slate-900/80 border border-blue-200 dark:border-blue-900/60 rounded-3xl p-6 sm:p-8 text-left shadow-md">
+        <div className={`border rounded-3xl p-6 sm:p-8 text-left shadow-md transition-all ${
+          hasCustomBg
+            ? 'bg-slate-900/80 backdrop-blur-xl border-white/15 text-white'
+            : 'bg-gradient-to-r from-blue-900/10 via-indigo-900/10 to-blue-900/10 dark:bg-slate-900/80 border-blue-200 dark:border-blue-900/60'
+        }`}>
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2.5 bg-blue-600 text-white rounded-2xl shadow-md">
               <Bot className="w-6 h-6" />

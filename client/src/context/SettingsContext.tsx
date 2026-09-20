@@ -56,6 +56,18 @@ export interface ApplicationSettings {
   kioskAutoResetSeconds: number;
   kioskShowAnnouncements: boolean;
   kioskShowCampusMap: boolean;
+
+  // Website Design & Background Customization
+  backgroundType?: 'default' | 'color' | 'gradient' | 'image' | 'video';
+  backgroundColor?: string;
+  backgroundGradient?: string;
+  backgroundImageUrl?: string;
+  backgroundVideoUrl?: string;
+  backgroundOverlayOpacity?: number;
+  backgroundBlur?: number;
+  secondaryColor?: string;
+  welcomeHeading?: string;
+  heroBadgeText?: string;
 }
 
 interface SettingsContextType {
@@ -109,7 +121,18 @@ const defaultSettings: ApplicationSettings = {
 
   kioskAutoResetSeconds: 90,
   kioskShowAnnouncements: true,
-  kioskShowCampusMap: true
+  kioskShowCampusMap: true,
+
+  backgroundType: 'default',
+  backgroundColor: '#0f172a',
+  backgroundGradient: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)',
+  backgroundImageUrl: '',
+  backgroundVideoUrl: '',
+  backgroundOverlayOpacity: 60,
+  backgroundBlur: 0,
+  secondaryColor: '#3b82f6',
+  welcomeHeading: 'Welcome to',
+  heroBadgeText: 'Digital Reception Kiosk'
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -138,11 +161,21 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           ...defaultSettings,
           ...raw,
           siteName: raw.siteName || raw.collegeName || defaultSettings.siteName,
-          siteLogoUrl: raw.siteLogoUrl || raw.logoUrl || '',
+          siteLogoUrl: raw.siteLogoUrl || raw.logoUrl || defaultSettings.siteLogoUrl,
           appName: raw.appName || raw.collegeName || defaultSettings.appName,
           appShortName: raw.appShortName || defaultSettings.appShortName,
-          appLogoUrl: raw.appLogoUrl || raw.logoUrl || '',
-          requiredVisitorFields: requiredFields
+          appLogoUrl: raw.appLogoUrl || raw.logoUrl || defaultSettings.appLogoUrl,
+          requiredVisitorFields: requiredFields,
+          backgroundType: raw.backgroundType || defaultSettings.backgroundType,
+          backgroundColor: raw.backgroundColor || defaultSettings.backgroundColor,
+          backgroundGradient: raw.backgroundGradient || defaultSettings.backgroundGradient,
+          backgroundImageUrl: raw.backgroundImageUrl || defaultSettings.backgroundImageUrl,
+          backgroundVideoUrl: raw.backgroundVideoUrl || defaultSettings.backgroundVideoUrl,
+          backgroundOverlayOpacity: raw.backgroundOverlayOpacity ?? defaultSettings.backgroundOverlayOpacity,
+          backgroundBlur: raw.backgroundBlur ?? defaultSettings.backgroundBlur,
+          secondaryColor: raw.secondaryColor || defaultSettings.secondaryColor,
+          welcomeHeading: raw.welcomeHeading || defaultSettings.welcomeHeading,
+          heroBadgeText: raw.heroBadgeText || defaultSettings.heroBadgeText
         });
       }
     } catch (e) {
@@ -183,6 +216,13 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (metaTheme && settings.themeColor) {
       metaTheme.content = settings.themeColor;
     }
+
+    if (settings.themeColor) {
+      document.documentElement.style.setProperty('--primary-theme-color', settings.themeColor);
+    }
+    if (settings.secondaryColor) {
+      document.documentElement.style.setProperty('--secondary-theme-color', settings.secondaryColor);
+    }
   }, [
     settings.siteName,
     settings.collegeName,
@@ -191,7 +231,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     settings.appLogoUrl,
     settings.appShortName,
     settings.logoUrl,
-    settings.themeColor
+    settings.themeColor,
+    settings.secondaryColor
   ]);
 
   return (

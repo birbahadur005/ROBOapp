@@ -33,6 +33,7 @@ router.delete('/departments/:id', AdminController.deleteDepartment);
 // Authority management
 router.post('/authorities', AdminController.createAuthority);
 router.patch('/authorities/:id', AdminController.updateAuthority);
+router.delete('/authorities/:id', AdminController.deleteAuthority);
 
 // User accounts & credentials management (Admin only)
 router.get('/users', AdminController.listUsers);
